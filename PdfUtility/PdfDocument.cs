@@ -43,19 +43,13 @@ namespace PdfUtility
             mParser = null;
         }
 
-        public List<(int objectNumber, PdfObject obj)> GetXrefObjects()
+        public List<(int ObjectNumber, PdfObject Obj)> GetXrefObjects()
         {
             return Parser.GetXReferenceObjects();
         }
 
         public void ParserGraphics(byte[] script, Func<List<object>, PdfDocument, bool> func)
         {
-            //var buf = new byte[script.Length];
-            //for(int i = 0; i < script.Length; i++)
-            //{
-            //    buf[i] = (byte)script[i];
-            //}
-            
             var ret = new List<object>();
 
             using var ms = new MemoryStream(script);// Encoding.ASCII.GetBytes(script));
@@ -83,8 +77,6 @@ namespace PdfUtility
             var c = topPage;
             var kids = pages.GetValue<PdfArray>("/Kids");
             if (kids == null) throw new Exception("cannot find kids in pages dictionary");
-
-
             for (var i = 0; i < kids.Count; i++)
             {
                 var kid = kids[i];

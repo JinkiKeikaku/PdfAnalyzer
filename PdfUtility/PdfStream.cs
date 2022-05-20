@@ -49,7 +49,7 @@ namespace PdfUtility
 
         public override string ToString()
         {
-            return $"Stream {Data.Length}bytes";
+            return $"Stream Length={Data.Length}";
         }
     }
 }

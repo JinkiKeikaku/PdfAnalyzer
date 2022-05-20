@@ -34,7 +34,7 @@ namespace PdfUtility
 
         public override string ToString()
         {
-            return Text.ToString();
+            return $"({Text.ToString()})";
         }
 
     }

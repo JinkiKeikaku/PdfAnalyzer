@@ -29,9 +29,9 @@ namespace PdfUtility
 
         }
 
-        public  List<(int objectNumber, PdfObject obj)> GetXReferenceObjects()
+        public  List<(int ObjectNumber, PdfObject Obj)> GetXReferenceObjects()
         {
-            var ret = new List<(int objectNumber, PdfObject obj)> ();
+            var ret = new List<(int ObjectNumber, PdfObject Obj)> ();
             if(Xref != null)
             {
                 foreach(var x in Xref)
@@ -48,8 +48,7 @@ namespace PdfUtility
                     ret.Add((x.Key, p));
                 }
             }
-
-            ret.Sort((x, y) => x.objectNumber - y.objectNumber);
+            ret.Sort((x, y) => x.ObjectNumber - y.ObjectNumber);
 
             return ret;
         }
@@ -74,9 +73,6 @@ namespace PdfUtility
             mTokenizer = tmp;
             return io;
         }
-
-
-
 
         public PdfObject? GetEntityObject(PdfObject? obj)
         {

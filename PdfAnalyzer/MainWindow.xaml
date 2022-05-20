@@ -50,6 +50,8 @@
             x:Name="Part_Tree"
             Grid.Row="1"
             ItemsSource="{Binding Datas}"
+            MouseRightButtonUp="Part_Tree_MouseRightButtonUp"
+            MouseDoubleClick="Part_Tree_MouseDoubleClick"
             AllowsColumnReorder="True">
             <tlv:TreeListView.ItemTemplate>
                 <HierarchicalDataTemplate 
@@ -69,7 +71,7 @@
                     </GridViewColumn.CellTemplate>
                 </GridViewColumn>
 
-                <GridViewColumn Width="100" Header="Information">
+                <GridViewColumn Width="200" Header="Information">
                     <GridViewColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Information}" />

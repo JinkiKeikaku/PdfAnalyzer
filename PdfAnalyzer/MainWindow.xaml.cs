@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using PdfAnalyzer.TreeListView;
 using PdfUtility;
 using System;
 using System.Collections.Generic;
@@ -42,7 +43,6 @@ namespace PdfAnalyzer
 
         private void Menu_Open_Click(object sender, RoutedEventArgs e)
         {
-            //mDatas[0].Children.Add(new PdfItem("aaa"));
 
             var f = new OpenFileDialog
             {
@@ -68,19 +68,16 @@ namespace PdfAnalyzer
                 doc.Open(stream);
                 var root = doc.Root;
                 if (root == null) throw new Exception("Cannot get root dictionary.");
+                Datas.Add(new TreeItem("File name", path));
+                Datas.Add(new TreeItem("Pdf Version", doc.PdfVerson));
                 var rootItem = CreateItem(root, "/Root");
                 MakeNode(rootItem);
                 Datas.Add(rootItem);
-                var x0 = doc.GetXrefObjects();
-
-                var xrefs = new PdfDictionary();
-                foreach(var x in x0)
-                {
-                    xrefs.Add()
-                    var node = CreateItem(x.obj, $"Xref({x.objectNumber})");
-                    MakeNode(node);
-                    Datas.Add(node);
-                }
+                var xrefs = doc.GetXrefObjects();
+                var xrefObj = new PdfXrefList(xrefs);
+                var xrefItem = new PdfXrefListItem(xrefObj);
+                MakeNode(xrefItem);
+                Datas.Add(xrefItem);
                 mFileName = path;
             }
             catch (Exception e)
@@ -92,18 +89,13 @@ namespace PdfAnalyzer
 
         private PdfObjectItem CreateItem(PdfObject obj, string name)
         {
-            switch (obj)
+            return obj switch
             {
-                case PdfDictionary d:
-                    {
-                        return new PdfDictionaryItem(d, name);
-                    }
-                case PdfArray a:
-                    {
-                        return new PdfArrayItem(a, name);
-                    }
-            }
-            return new PdfObjectItem(obj, name, obj.ToString());
+                PdfDictionary d => new PdfDictionaryItem(d, name),
+                PdfArray a => new PdfArrayItem(a, name),
+                PdfReference r => new PdfReferenceItem(r, name),
+                _ => new PdfObjectItem(obj, name, obj?.ToString()??""),
+            };
         }
 
         private void MakeNode(PdfObjectItem item)
@@ -132,6 +124,8 @@ namespace PdfAnalyzer
                     }
                 case PdfStream s:
                     {
+                        var sd = new PdfStreamDataItem(s);
+                        item.Children.Add(sd);
                         foreach (var d in s.Dictionary)
                         {
                             var child = CreateItem(d.Value, d.Key);
@@ -140,6 +134,64 @@ namespace PdfAnalyzer
                         }
                     }
                     break;
+                case PdfXrefList xrefs:
+                    {
+                        for (var i = 0; i < xrefs.Count; i++)
+                        {
+                            var child = CreateItem(xrefs[i].Obj, $"[{xrefs[i].ObjectNumber}]");
+                            item.Children.Add(child);
+                            MakeNode(child);
+                        }
+                    }
+                    break;
+            }
+
+        }
+
+        private void Part_Tree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (Part_Tree.SelectedItem is not PdfObjectItem item) return;
+            if (item.PdfObject is PdfReference r) SelectXrefObject(r);
+        }
+
+
+        private void Part_Tree_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (Part_Tree.SelectedItem is not PdfObjectItem item) return;
+            if (item.PdfObject is PdfReference r)
+            {
+                var menu = new ContextMenu();
+                var m1 = new MenuItem();
+                m1.Header = "Go to object";
+                m1.Click += (sender, e) =>
+                {
+                    SelectXrefObject(r);
+                };
+                menu.Items.Add(m1);
+                menu.IsOpen = true;
+            }
+        }
+
+
+        private void SelectXrefObject(PdfReference r)
+        {
+            var x = VisualTreeExt.GetDescendants<TreeViewItem>(Part_Tree).FirstOrDefault(tvi =>
+            {
+                return tvi.DataContext is PdfXrefListItem;
+            });
+            if (x?.DataContext is not PdfXrefListItem px) return;
+            x.IsExpanded = true;
+            int n = px.XrefList.Count;
+            for (var i = 0; i < n; i++)
+            {
+                if (px.XrefList[i].ObjectNumber == r.ObjectNumber)
+                {
+                    x = VisualTreeExt.GetDescendants<TreeViewItem>(Part_Tree).FirstOrDefault(tvi =>
+                    {
+                        return tvi.DataContext is PdfObjectItem pi && pi.PdfObject == px.XrefList[i].Obj;
+                    });
+                    if (x != null) x.IsSelected = true;
+                }
             }
 
         }
