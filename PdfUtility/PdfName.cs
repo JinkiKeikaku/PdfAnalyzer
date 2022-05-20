@@ -26,21 +26,21 @@ namespace PdfUtility
             return HashCode.Combine(Name);
         }
 
-        public static bool operator==(PdfName x, string y)
+        public static bool operator==(PdfName? x, string? y)
         {
-            return x.Name == y;
+            return x?.Name == y;
         }
-        public static bool operator !=(PdfName x, string y)
+        public static bool operator !=(PdfName? x, string? y)
         {
-            return x.Name != y;
+            return x?.Name != y;
         }
-        public static bool operator ==(string y, PdfName x)
+        public static bool operator ==(string? y, PdfName? x)
         {
-            return x.Name == y;
+            return x?.Name == y;
         }
-        public static bool operator !=(string y, PdfName x)
+        public static bool operator !=(string? y, PdfName? x)
         {
-            return x.Name != y;
+            return x?.Name != y;
         }
 
         public override string ToString() => Name;

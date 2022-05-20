@@ -7,10 +7,14 @@ using System.Threading.Tasks;
 
 namespace PdfUtility
 {
+    /// <summary>
+    /// PDFのドキュメントクラス
+    /// </summary>
     public class PdfDocument
     {
         private PdfParser? mParser;
         private PdfDictionary? mTrailer;
+
         public string PdfVerson { get; private set; } = "";
         public PdfDictionary? RootPages { get; private set; }
         public PdfDictionary? Root { get; private set; }
@@ -35,8 +39,6 @@ namespace PdfUtility
             if (Root == null) throw new Exception("cannot find root object.");
             RootPages = (mParser.GetEntityObject(Root.GetValue<PdfObject>("/Pages")) as PdfDictionary)!;
         }
-
-        
 
         public void Close()
         {
@@ -127,7 +129,6 @@ namespace PdfUtility
             return pdfPageAttribute;
         }
 
-
         public PdfPage GetPage(int pageNumber)
         {
             if (RootPages == null) throw new Exception("Root pages is null. maybe document is not open.");
@@ -148,7 +149,6 @@ namespace PdfUtility
             var resources = Parser.GetEntityObject(pageDic.GetValue<PdfObject>("/Resources"));
             page.ResourcesDictionary = resources as PdfDictionary;
             if(page.ResourcesDictionary != null)    page.Fonts = GetFonts(page.ResourcesDictionary);
-
 
             for (int i = 0; i < contentsArray.Count; i++)
             {

@@ -150,10 +150,26 @@ namespace PdfAnalyzer
 
         private void Part_Tree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            if (Part_Tree.SelectedItem is PdfStreamDataItem s) ExtractStreamData(s);
             if (Part_Tree.SelectedItem is not PdfObjectItem item) return;
             if (item.PdfObject is PdfReference r) SelectXrefObject(r);
+
         }
 
+        private void ExtractStreamData(PdfStreamDataItem item)
+        {
+            var bytes = item.Parent.GetExtractedBytes();
+            if(bytes == null) return;
+            var filter = item.Parent.Dictionary.GetValue<PdfName>("/Filter");
+            if(filter == null || filter?.Name == "/FlateDecode")
+            {
+                var s = Encoding.ASCII.GetString(bytes);
+                var w = new PdfStreamDataWindow();
+                w.Owner = this;
+                w.Part_Text.Text = s;
+                w.Show();
+            }
+        }
 
         private void Part_Tree_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
