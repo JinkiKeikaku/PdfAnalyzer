@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PdfUtility
 {
-    class PdfStream : PdfObject
+    public class PdfStream : PdfObject
     {
         public PdfDictionary Dictionary;
         public byte[] Data;
@@ -45,6 +45,11 @@ namespace PdfUtility
                 }
             }
             return null;
+        }
+
+        public override string ToString()
+        {
+            return $"Stream {Data.Length}bytes";
         }
     }
 }

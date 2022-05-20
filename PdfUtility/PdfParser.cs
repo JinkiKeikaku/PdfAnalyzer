@@ -29,29 +29,69 @@ namespace PdfUtility
 
         }
 
-        public object? GetEntityObject(object? obj)
+        public  List<(int objectNumber, PdfObject obj)> GetXReferenceObjects()
+        {
+            var ret = new List<(int objectNumber, PdfObject obj)> ();
+            if(Xref != null)
+            {
+                foreach(var x in Xref)
+                {
+                    var p = GetObjectFromXref(x.Value);
+                    ret.Add((x.Key, p));
+                }
+            }
+            if (Xref2 != null)
+            {
+                foreach (var x in Xref2)
+                {
+                    var p = GetObjectFromXrefStream(x.Value);
+                    ret.Add((x.Key, p));
+                }
+            }
+
+            ret.Sort((x, y) => x.objectNumber - y.objectNumber);
+
+            return ret;
+        }
+
+
+        private PdfObject GetObjectFromXref(long streamPosition)
+        {
+            var sp = mTokenizer.StreamPosition;
+            mTokenizer.StreamPosition = streamPosition;
+            if (ParseObject() is not PdfIndirectObject io) throw new Exception("GetEntityObject:Not indirect object.");
+            mTokenizer.StreamPosition = sp;
+            return io.IndirectObject;
+        }
+
+        private PdfObject GetObjectFromXrefStream(byte[] bytes)
+        {
+            using var mem = new MemoryStream(bytes);
+            var tmp = mTokenizer;
+            mTokenizer = new PdfTokenizer(mem);
+            var io = ParseObject();
+            if (io == null) throw new Exception("GetEntityObject:cannot parse xref stream.");
+            mTokenizer = tmp;
+            return io;
+        }
+
+
+
+
+        public PdfObject? GetEntityObject(PdfObject? obj)
         {
             if (obj is PdfReference r)
             {
                 if (Xref.ContainsKey(r.ObjectNumber))
                 {
-                    var sp = mTokenizer.StreamPosition;
-                    mTokenizer.StreamPosition = Xref[r.ObjectNumber];
-                    if (ParseObject() is not PdfIndirectObject io) throw new Exception("GetEntityObject:Not indirect object.");
-                    mTokenizer.StreamPosition = sp;
-                    return GetEntityObject(io.IndirectObject);
+                    var io = GetObjectFromXref(Xref[r.ObjectNumber]);
+                    return GetEntityObject(io);// GetEntityObject(io.IndirectObject);
                 }
                 else
                 {
                     if (Xref2?.ContainsKey(r.ObjectNumber) == true)
                     {
-                        using var mem = new MemoryStream(Xref2[r.ObjectNumber]);
-                        var tmp = mTokenizer;
-                        mTokenizer = new PdfTokenizer(mem);
-                        var io = ParseObject();
-                        if (io == null) throw new Exception("GetEntityObject:cannot parse xref stream.");
-                        mTokenizer = tmp;
-                        return GetEntityObject(io);
+                        return GetEntityObject(GetObjectFromXrefStream(Xref2[r.ObjectNumber]));
                     }
                     return null;
                 }
@@ -59,20 +99,7 @@ namespace PdfUtility
             return obj;
         }
 
-        //public int GetInt(object? obj)
-        //{
-        //    var a = GetEntityObject(obj);
-        //    if (a is double d) return (int)d;
-        //    throw new Exception("GetInt:Not number object.");
-        //}
-        //public double GetDouble(object? obj)
-        //{
-        //    var a = GetEntityObject(obj);
-        //    if (a is double d) return d;
-        //    throw new Exception("GetInt:Not number object.");
-        //}
-
-        public T? ParseObject<T>() where T: PdfObject
+        public T? ParseObject<T>() where T : PdfObject
         {
             return ParseObject() as T;
 
@@ -120,7 +147,7 @@ namespace PdfUtility
                             if (t3.GetString() == "obj")
                             {
                                 var obj = ParseObject();
-                                if(obj == null) throw new Exception("Cannot create PdfObject.ParseObject() return null.");
+                                if (obj == null) throw new Exception("Cannot create PdfObject.ParseObject() return null.");
                                 var t4 = mTokenizer.GetNextToken();
                                 if (t4.Kind != TokenKind.Identifier || t4.GetString() != "endobj")
                                 {
@@ -141,7 +168,7 @@ namespace PdfUtility
                     return new PdfHexString(t.GetString());
                 case TokenKind.Identifier:
                     var s = t.GetString();
-                    if (s == "null")   return new PdfNull();
+                    if (s == "null") return new PdfNull();
                     return new PdfIdentifier(s);
                 default:
                     Debug.WriteLine($"Unknown token:{t}");

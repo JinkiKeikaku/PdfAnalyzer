@@ -43,6 +43,11 @@ namespace PdfUtility
             mParser = null;
         }
 
+        public List<(int objectNumber, PdfObject obj)> GetXrefObjects()
+        {
+            return Parser.GetXReferenceObjects();
+        }
+
         public void ParserGraphics(byte[] script, Func<List<object>, PdfDocument, bool> func)
         {
             //var buf = new byte[script.Length];

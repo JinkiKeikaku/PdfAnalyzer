@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:PdfAnalyzer"
+    xmlns:tlv="clr-namespace:PdfAnalyzer.TreeListView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="PdfAnalyzer"
     Width="1000"
@@ -13,7 +14,6 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <Menu Grid.Row="0">
@@ -23,30 +23,60 @@
                     <Setter Property="VerticalContentAlignment" Value="Center" />
                 </Style>
             </Menu.ItemContainerStyle>
-            <MenuItem Header="File" >
-                <MenuItem Header="Open" 
-                          x:Name="Menu_Open" Click="Menu_Open_Click"
-                          />
-                <MenuItem Header="Exit"
-                          x:Name="Menu_Exit" Click="Menu_Exit_Click"
-                          
-                          />
-
+            <MenuItem Header="File">
+                <MenuItem
+                    x:Name="Menu_Open"
+                    Click="Menu_Open_Click"
+                    Header="Open" />
+                <MenuItem
+                    x:Name="Menu_Exit"
+                    Click="Menu_Exit_Click"
+                    Header="Exit" />
             </MenuItem>
-
         </Menu>
-        <TreeView Grid.Row="1"
-                  x:Name="Part_Tree"
-                 >
+
+        <!--<TreeView x:Name="Part_Tree" FontSize="20"
+            Grid.Row="1"
+                  >
             <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate DataType="local:PdfObject"
-                                  ItemsSource="{Binding Children}">
-                    <TextBlock Text="{Binding DisplayString}"/>
+                <HierarchicalDataTemplate DataType="local:PdfNode"
+                                              ItemsSource="{Binding Children}">
+                    <TextBlock Text="{Binding Name}"/>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
+        </TreeView>-->
 
+        <tlv:TreeListView
+            x:Name="Part_Tree"
+            Grid.Row="1"
+            ItemsSource="{Binding Datas}"
+            AllowsColumnReorder="True">
+            <tlv:TreeListView.ItemTemplate>
+                <HierarchicalDataTemplate 
+                    ItemsSource="{Binding Children}" />
+            </tlv:TreeListView.ItemTemplate>
 
-        </TreeView>
+            <tlv:TreeListView.Columns>
+                <GridViewColumn Width="200" Header="Name">
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <tlv:TreeListViewExpander />
+                                <TextBlock Text="{Binding Name}" 
+                                           />
+                            </StackPanel>
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
 
+                <GridViewColumn Width="100" Header="Information">
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Information}" />
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+            </tlv:TreeListView.Columns>
+        </tlv:TreeListView>
     </Grid>
 </Window>

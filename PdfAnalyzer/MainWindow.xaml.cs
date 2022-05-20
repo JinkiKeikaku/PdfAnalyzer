@@ -24,12 +24,15 @@ namespace PdfAnalyzer
     /// </summary>
     public partial class MainWindow : Window
     {
-        private ObservableCollection<PdfNode> mDatas = new();
+        public ObservableCollection<TreeItem> Datas { get; } = new();
+
+        private string mFileName;
+        private string mPdfVersion;
+
         public MainWindow()
         {
             InitializeComponent();
-
-            Part_Tree.ItemsSource = mDatas;
+            DataContext = this;
         }
 
         private void Menu_Exit_Click(object sender, RoutedEventArgs e)
@@ -59,62 +62,115 @@ namespace PdfAnalyzer
         {
             try
             {
+                Datas.Clear();
                 using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                 var doc = new PdfDocument();
                 doc.Open(stream);
                 var root = doc.Root;
                 if (root == null) throw new Exception("Cannot get root dictionary.");
-                PdfNode rootNode = new("/Root", root);
-                MakeNode(rootNode);
-                //foreach (var d in root)
-                //{
-                //    PdfNode node = new(d.Key, d.Value);
-                //    rootNode.Children.Add(node);
+                var rootItem = CreateItem(root, "/Root");
+                MakeNode(rootItem);
+                Datas.Add(rootItem);
+                var x0 = doc.GetXrefObjects();
 
-                //}
-
-
-                //root.Children.Add(new PdfItem("child1"));
-                //root.Children.Add(new PdfItem("child2"));
-                mDatas.Add(rootNode);
-
-
+                var xrefs = new PdfDictionary();
+                foreach(var x in x0)
+                {
+                    xrefs.Add()
+                    var node = CreateItem(x.obj, $"Xref({x.objectNumber})");
+                    MakeNode(node);
+                    Datas.Add(node);
+                }
+                mFileName = path;
             }
             catch (Exception e)
             {
                 MessageBox.Show(e.Message);
+                mFileName = "";
             }
         }
 
-        private void MakeNode(PdfNode parentNode)
+        private PdfObjectItem CreateItem(PdfObject obj, string name)
         {
-            if (parentNode == null) return;
-            if (parentNode.PdfObject is not PdfDictionary dic) return;
-            foreach (var d in dic)
+            switch (obj)
             {
-                PdfNode node = new(d.Key, d.Value);
-                parentNode.Children.Add(node);
-                MakeNode(node);
+                case PdfDictionary d:
+                    {
+                        return new PdfDictionaryItem(d, name);
+                    }
+                case PdfArray a:
+                    {
+                        return new PdfArrayItem(a, name);
+                    }
             }
+            return new PdfObjectItem(obj, name, obj.ToString());
         }
 
-        public class PdfNode
+        private void MakeNode(PdfObjectItem item)
         {
-            public PdfObject PdfObject { get; set; }
-
-            public string Name { get; set; }
-            public string DisplayString => ToString();
-            public List<PdfNode> Children { get; set; } = new();
-            public PdfNode(string name, PdfObject obj)
+            switch (item.PdfObject)
             {
-                Name = name;
-                PdfObject = obj;
+                case PdfDictionary dic:
+                    {
+                        foreach (var d in dic)
+                        {
+                            var child = CreateItem(d.Value, d.Key);
+                            item.Children.Add(child);
+                            MakeNode(child);
+                        }
+                    }
+                    break;
+                case PdfArray array:
+                    {
+                        for (var i = 0; i < array.Count; i++)
+                        {
+                            var child = CreateItem(array[i], $"[{i}]");
+                            item.Children.Add(child);
+                            MakeNode(child);
+                        }
+                        break;
+                    }
+                case PdfStream s:
+                    {
+                        foreach (var d in s.Dictionary)
+                        {
+                            var child = CreateItem(d.Value, d.Key);
+                            item.Children.Add(child);
+                            MakeNode(child);
+                        }
+                    }
+                    break;
             }
 
-            public override string ToString()
-            {
-                return $"{Name}::{PdfObject.ToString()}";
-            }
         }
+
+
+
+        //public class PdfNode
+        //{
+        //    public PdfObject PdfObject { get; set; }
+
+        //    public string Name { get; set; }
+        //    public string Information {
+        //        get
+        //        {
+        //            switch (PdfObject)
+        //            {
+        //                case PdfDictionary:
+        //                    return "<<...>>";
+        //                case PdfArray:
+        //                    return "[...]";
+        //            }
+        //            return PdfObject?.ToString() ?? "";
+        //        }
+        //    }
+        //    public ObservableCollection<PdfNode> Children { get; set; } = new();
+        //    public PdfNode(string name, PdfObject obj)
+        //    {
+        //        Name = name;
+        //        PdfObject = obj;
+        //    }
+        //}
+
     }
 }

@@ -6,17 +6,23 @@ using System.Threading.Tasks;
 
 namespace PdfUtility
 {
-    class PdfIndirectObject : PdfObject
+    public class PdfIndirectObject : PdfObject
     {
         public int ObjectNumber;
         public int GenerationNumber;
-        public object IndirectObject;
+        public PdfObject IndirectObject;
 
-        public PdfIndirectObject(object obj, int objectNumber, int generationNumber)
+        public PdfIndirectObject(PdfObject obj, int objectNumber, int generationNumber)
         {
             IndirectObject = obj;
             ObjectNumber = objectNumber;
             GenerationNumber = generationNumber;
         }
+
+        public override string ToString()
+        {
+            return $"({ObjectNumber} {GenerationNumber} obj)";
+        }
+
     }
 }
