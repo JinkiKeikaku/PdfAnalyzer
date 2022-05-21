@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Media;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -165,14 +166,17 @@ namespace PdfAnalyzer
             var filter = item.Parent.Dictionary.GetValue<PdfName>("/Filter");
             if(filter == null || filter?.Name == "/FlateDecode")
             {
-                var s = Encoding.ASCII.GetString(bytes);
-                var path = System.IO.Path.GetTempFileName();
-                File.WriteAllText(path, s);
-                System.Diagnostics.Process.Start(Properties.Settings.Default.TextEditorPath, path);
-                //var w = new PdfStreamDataWindow();
-                //w.Owner = this;
-                //w.Part_Text.Text = s;
-                //w.Show();
+                try
+                {
+                    var s = Encoding.ASCII.GetString(bytes);
+                    var path = System.IO.Path.GetTempFileName();
+                    File.WriteAllText(path, s);
+                    System.Diagnostics.Process.Start(Properties.Settings.Default.TextEditorPath, path);
+                }catch (Exception e)
+                {
+                    SystemSounds.Beep.Play();
+                    MessageBox.Show(e.Message, "Error");
+                }
             }
         }
 
