@@ -25,6 +25,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Label Grid.Row="0" Grid.Column="0" Content="Text editor"/>
                 <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
@@ -44,9 +45,18 @@
                             Click="Parts_SelectBinaryEditorPath_Click"
                             />
                 </StackPanel>
+                <Label Grid.Row="2" Grid.Column="0" Content="Image viewer"/>
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
+                    <TextBox x:Name="Part_ImageViewerPath" Width="200" Margin="5"
+                         Text="{Binding ImageViewerPath}"
+                         />
+                    <Button x:Name="Parts_SelectImageViewerPath" Width="30"  Content="..."
+                            Click="Parts_SelectImageViewerPath_Click"
+                            />
+                </StackPanel>
 
             </Grid>
-            <StackPanel Grid.Row="2" Orientation="Vertical">
+            <StackPanel Grid.Row="3" Orientation="Vertical">
                 <StackPanel
                     Margin="0,8,0,0"
                     HorizontalAlignment="Right"

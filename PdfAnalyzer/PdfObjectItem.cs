@@ -77,7 +77,7 @@ namespace PdfAnalyzer
     class PdfXrefListItem : PdfObjectItem
     {
         public PdfXrefList XrefList { get; }
-        public PdfXrefListItem(PdfXrefList xrefList) : base(xrefList, "Xref","Object", "")
+        public PdfXrefListItem(PdfXrefList xrefList) : base(xrefList, "Xrefs","", "Xref list")
         {
             XrefList = xrefList;
         }

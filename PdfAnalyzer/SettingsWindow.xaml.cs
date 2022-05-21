@@ -30,11 +30,13 @@ namespace PdfAnalyzer
         }
         public string TextEditorPath { get; set; } = Properties.Settings.Default.TextEditorPath;
         public string BinaryEditorPath { get; set; } = Properties.Settings.Default.BinaryEditorPath;
+        public string ImageViewerPath { get; set; } = Properties.Settings.Default.ImageViewerPath;
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             Properties.Settings.Default.TextEditorPath = TextEditorPath;
             Properties.Settings.Default.BinaryEditorPath = BinaryEditorPath;
+            Properties.Settings.Default.ImageViewerPath = ImageViewerPath;
             Close();
         }
 
@@ -53,6 +55,14 @@ namespace PdfAnalyzer
             SelectPath(TextEditorPath, s => {
                 BinaryEditorPath = s;
                 OnPropertyChanged(nameof(BinaryEditorPath));
+            });
+        }
+        private void Parts_SelectImageViewerPath_Click(object sender, RoutedEventArgs e)
+        {
+            var s = ImageViewerPath;
+            SelectPath(ImageViewerPath, s => {
+                ImageViewerPath = s;
+                OnPropertyChanged(nameof(ImageViewerPath));
             });
         }
 

@@ -118,5 +118,29 @@ namespace PdfAnalyzer.Properties {
                 this["BinaryEditorPath"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool IsUpgrade {
+            get {
+                return ((bool)(this["IsUpgrade"]));
+            }
+            set {
+                this["IsUpgrade"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("explorer")]
+        public string ImageViewerPath {
+            get {
+                return ((string)(this["ImageViewerPath"]));
+            }
+            set {
+                this["ImageViewerPath"] = value;
+            }
+        }
     }
 }

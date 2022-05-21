@@ -26,5 +26,11 @@
     <Setting Name="BinaryEditorPath" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="IsUpgrade" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ImageViewerPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">explorer</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

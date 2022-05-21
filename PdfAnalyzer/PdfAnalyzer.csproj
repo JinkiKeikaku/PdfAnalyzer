@@ -6,7 +6,13 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>  
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+
+    <Version>0.1.0</Version>
+    <Authors>Junkbulk</Authors>
+    <Company>JinkiKeikaku</Company>
+    <Copyright>Copyright © 2022 JinkiKeikaku</Copyright>
+
   </PropertyGroup>
 
 

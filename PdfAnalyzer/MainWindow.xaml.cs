@@ -4,6 +4,7 @@ using PdfUtility;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Media;
@@ -33,6 +34,12 @@ namespace PdfAnalyzer
 
         public MainWindow()
         {
+            if (Properties.Settings.Default.IsUpgrade == false)
+            {
+                Properties.Settings.Default.Upgrade();
+                Properties.Settings.Default.IsUpgrade = true;
+                Debug.WriteLine(this, "Upgraded");
+            }
             InitializeComponent();
             DataContext = this;
         }
@@ -44,14 +51,12 @@ namespace PdfAnalyzer
 
         private void Menu_Open_Click(object sender, RoutedEventArgs e)
         {
-
             var f = new OpenFileDialog
             {
                 FileName = "",
                 FilterIndex = 1,
                 Filter = "PDF file(.pdf)|*.pdf|All files (*.*)|*.*",
             };
-
             if (f.ShowDialog(Application.Current.MainWindow) == true)
             {
                 OpenPdf(f.FileName);
@@ -153,7 +158,7 @@ namespace PdfAnalyzer
 
         private void Part_Tree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (Part_Tree.SelectedItem is PdfStreamDataItem s) ExtractStreamData(s, OpenType.Auto);
+            if (Part_Tree.SelectedItem is PdfStreamDataItem s) OpenStreamData(s, OpenType.Auto);
             if (Part_Tree.SelectedItem is not PdfObjectItem item) return;
             if (item.PdfObject is PdfReference r) SelectXrefObject(r);
         }
@@ -161,9 +166,11 @@ namespace PdfAnalyzer
         enum OpenType
         {
             Auto,
-            Text,
+            ExtractBinary,
+            ExtractText,
+            JpegImage,
             Binary,
-
+            Text,
         }
 
         private void Part_Tree_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
@@ -184,40 +191,77 @@ namespace PdfAnalyzer
             }
             if (Part_Tree.SelectedItem is PdfStreamDataItem s)
             {
-                var m1 = new MenuItem();
-                m1.Header = "Open as text";
-                m1.Click += (sender, e) =>
+                var filter = s.Parent.Dictionary.GetValue<PdfName>("/Filter");
+                switch (filter?.Name)
                 {
-                    ExtractStreamData(s, OpenType.Text);
-                };
-                menu.Items.Add(m1);
-                var m2 = new MenuItem();
-                m2.Header = "Open as binary";
-                m2.Click += (sender, e) =>
-                {
-                    ExtractStreamData(s, OpenType.Binary);
-                };
-                menu.Items.Add(m2);
-
+                    case "/FlateDecode":
+                        {
+                            var m1 = new MenuItem();
+                            m1.Header = "Extract and open as text";
+                            m1.Click += (sender, e) =>
+                            {
+                                OpenStreamData(s, OpenType.ExtractText);
+                            };
+                            menu.Items.Add(m1);
+                            var m2 = new MenuItem();
+                            m2.Header = "Extract and open as binary";
+                            m2.Click += (sender, e) =>
+                            {
+                                OpenStreamData(s, OpenType.ExtractBinary);
+                            };
+                            menu.Items.Add(m2);
+                        }
+                        break;
+                    case "/DCTDecode":
+                        {
+                            var m1 = new MenuItem();
+                            m1.Header = "Open as Image";
+                            m1.Click += (sender, e) =>
+                            {
+                                OpenStreamData(s, OpenType.JpegImage);
+                            };
+                            menu.Items.Add(m1);
+                            var m2 = new MenuItem();
+                            m2.Header = "Open as binary";
+                            m2.Click += (sender, e) =>
+                            {
+                                OpenStreamData(s, OpenType.Binary);
+                            };
+                            menu.Items.Add(m2);
+                        }
+                        break;
+                    default:
+                        {
+                            var m1 = new MenuItem();
+                            m1.Header = "Open as text";
+                            m1.Click += (sender, e) =>
+                            {
+                                OpenStreamData(s, OpenType.Text);
+                            };
+                            menu.Items.Add(m1);
+                            var m2 = new MenuItem();
+                            m2.Header = "Open as binary";
+                            m2.Click += (sender, e) =>
+                            {
+                                OpenStreamData(s, OpenType.Binary);
+                            };
+                            menu.Items.Add(m2);
+                        }
+                        break;
+                }
             }
-
-
-
-
             if (menu.Items.Count > 0) menu.IsOpen = true;
-
         }
 
-        private void ExtractStreamData(PdfStreamDataItem item, OpenType ot)
+        private void OpenStreamData(PdfStreamDataItem item, OpenType ot)
         {
-            var bytes = item.Parent.GetExtractedBytes();
-            if (bytes == null) return;
             var filter = item.Parent.Dictionary.GetValue<PdfName>("/Filter");
             if (ot == OpenType.Auto)
             {
                 ot = filter?.Name switch
                 {
-                    "/FlateDecode" => OpenType.Text,
+                    "/FlateDecode" => OpenType.ExtractText,
+                    "/DCTDecode" => OpenType.JpegImage,
                     _ => OpenType.Binary,
                 };
             }
@@ -226,13 +270,34 @@ namespace PdfAnalyzer
                 var path = System.IO.Path.GetTempFileName();
                 switch (ot)
                 {
+                    case OpenType.ExtractText:
+                        {
+                            var bytes = item.Parent.GetExtractedBytes();
+                            if (bytes == null) return;
+                            File.WriteAllText(path, Encoding.ASCII.GetString(bytes));
+                            System.Diagnostics.Process.Start(Properties.Settings.Default.TextEditorPath, path);
+                        }
+                        break;
+                    case OpenType.ExtractBinary:
+                        {
+                            var bytes = item.Parent.GetExtractedBytes();
+                            if (bytes == null) return;
+                            File.WriteAllBytes(path, bytes);
+                            System.Diagnostics.Process.Start(Properties.Settings.Default.BinaryEditorPath, path);
+                        }
+                        break;
                     case OpenType.Text:
-                        File.WriteAllText(path, Encoding.ASCII.GetString(bytes));
+                        File.WriteAllText(path, Encoding.ASCII.GetString(item.Parent.Data));
                         System.Diagnostics.Process.Start(Properties.Settings.Default.TextEditorPath, path);
                         break;
                     case OpenType.Binary:
-                        File.WriteAllBytes(path, bytes);
+                        File.WriteAllBytes(path, item.Parent.Data);
                         System.Diagnostics.Process.Start(Properties.Settings.Default.BinaryEditorPath, path);
+                        break;
+                    case OpenType.JpegImage:
+                        path += ".jpg";
+                        File.WriteAllBytes(path, item.Parent.Data);
+                        System.Diagnostics.Process.Start("Explorer", path);
                         break;
                 }
             }
