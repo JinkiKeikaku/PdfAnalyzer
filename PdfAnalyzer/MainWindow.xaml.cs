@@ -69,8 +69,8 @@ namespace PdfAnalyzer
                 doc.Open(stream);
                 var root = doc.Root;
                 if (root == null) throw new Exception("Cannot get root dictionary.");
-                Datas.Add(new TreeItem("File name", "",path));
-                Datas.Add(new TreeItem("Pdf Version", "",doc.PdfVerson));
+                Datas.Add(new TreeItem("File name", "", path));
+                Datas.Add(new TreeItem("Pdf Version", "", doc.PdfVerson));
                 var rootItem = CreateItem(root, "/Root");
                 Datas.Add(MakeNode(rootItem));
                 var xrefs = doc.GetXrefObjects();
@@ -80,7 +80,7 @@ namespace PdfAnalyzer
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message);
+                Utility.ShowErrorMessage(e.Message);
                 mFileName = "";
             }
         }
@@ -97,7 +97,7 @@ namespace PdfAnalyzer
                 PdfString => new PdfObjectItem(obj, name, "String", obj?.ToString() ?? ""),
                 PdfHexString => new PdfObjectItem(obj, name, "HexString", obj?.ToString() ?? ""),
                 PdfStream => new PdfObjectItem(obj, name, "Stream", obj?.ToString() ?? ""),
-                _ => new PdfObjectItem(obj, name, "", obj?.ToString()??""),
+                _ => new PdfObjectItem(obj, name, "", obj?.ToString() ?? ""),
             };
         }
 
@@ -153,50 +153,94 @@ namespace PdfAnalyzer
 
         private void Part_Tree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (Part_Tree.SelectedItem is PdfStreamDataItem s) ExtractStreamData(s);
+            if (Part_Tree.SelectedItem is PdfStreamDataItem s) ExtractStreamData(s, OpenType.Auto);
             if (Part_Tree.SelectedItem is not PdfObjectItem item) return;
             if (item.PdfObject is PdfReference r) SelectXrefObject(r);
-
         }
 
-        private void ExtractStreamData(PdfStreamDataItem item)
+        enum OpenType
         {
-            var bytes = item.Parent.GetExtractedBytes();
-            if(bytes == null) return;
-            var filter = item.Parent.Dictionary.GetValue<PdfName>("/Filter");
-            if(filter == null || filter?.Name == "/FlateDecode")
-            {
-                try
-                {
-                    var s = Encoding.ASCII.GetString(bytes);
-                    var path = System.IO.Path.GetTempFileName();
-                    File.WriteAllText(path, s);
-                    System.Diagnostics.Process.Start(Properties.Settings.Default.TextEditorPath, path);
-                }catch (Exception e)
-                {
-                    SystemSounds.Beep.Play();
-                    MessageBox.Show(e.Message, "Error");
-                }
-            }
+            Auto,
+            Text,
+            Binary,
+
         }
 
         private void Part_Tree_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (Part_Tree.SelectedItem is not PdfObjectItem item) return;
-            if (item.PdfObject is PdfReference r)
+            var menu = new ContextMenu();
+            if (Part_Tree.SelectedItem is PdfObjectItem item)
             {
-                var menu = new ContextMenu();
+                if (item.PdfObject is PdfReference r)
+                {
+                    var m1 = new MenuItem();
+                    m1.Header = "Go to object";
+                    m1.Click += (sender, e) =>
+                    {
+                        SelectXrefObject(r);
+                    };
+                    menu.Items.Add(m1);
+                }
+            }
+            if (Part_Tree.SelectedItem is PdfStreamDataItem s)
+            {
                 var m1 = new MenuItem();
-                m1.Header = "Go to object";
+                m1.Header = "Open as text";
                 m1.Click += (sender, e) =>
                 {
-                    SelectXrefObject(r);
+                    ExtractStreamData(s, OpenType.Text);
                 };
                 menu.Items.Add(m1);
-                menu.IsOpen = true;
+                var m2 = new MenuItem();
+                m2.Header = "Open as binary";
+                m2.Click += (sender, e) =>
+                {
+                    ExtractStreamData(s, OpenType.Binary);
+                };
+                menu.Items.Add(m2);
+
             }
+
+
+
+
+            if (menu.Items.Count > 0) menu.IsOpen = true;
+
         }
 
+        private void ExtractStreamData(PdfStreamDataItem item, OpenType ot)
+        {
+            var bytes = item.Parent.GetExtractedBytes();
+            if (bytes == null) return;
+            var filter = item.Parent.Dictionary.GetValue<PdfName>("/Filter");
+            if (ot == OpenType.Auto)
+            {
+                ot = filter?.Name switch
+                {
+                    "/FlateDecode" => OpenType.Text,
+                    _ => OpenType.Binary,
+                };
+            }
+            try
+            {
+                var path = System.IO.Path.GetTempFileName();
+                switch (ot)
+                {
+                    case OpenType.Text:
+                        File.WriteAllText(path, Encoding.ASCII.GetString(bytes));
+                        System.Diagnostics.Process.Start(Properties.Settings.Default.TextEditorPath, path);
+                        break;
+                    case OpenType.Binary:
+                        File.WriteAllBytes(path, bytes);
+                        System.Diagnostics.Process.Start(Properties.Settings.Default.BinaryEditorPath, path);
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                Utility.ShowErrorMessage(e.Message);
+            }
+        }
 
         private void SelectXrefObject(PdfReference r)
         {
@@ -251,7 +295,7 @@ namespace PdfAnalyzer
             settings.WindowHeight = Height;
 
             var sb = new StringBuilder();
-            foreach(var t in Part_Tree.Columns)
+            foreach (var t in Part_Tree.Columns)
             {
                 sb.Append($"{t.ActualWidth.ToString()} ");
             }
@@ -280,11 +324,11 @@ namespace PdfAnalyzer
                 Loaded += (o, e) => WindowState = WindowState.Maximized;
             }
             var s = settings.HeaderSize.Split(' ');
-            if(s.Length > 0)
+            if (s.Length > 0)
             {
-                for(var i = 0; i < s.Length && i < Part_Tree.Columns.Count; i++)
+                for (var i = 0; i < s.Length && i < Part_Tree.Columns.Count; i++)
                 {
-                    if(double.TryParse(s[i], out var w))
+                    if (double.TryParse(s[i], out var w))
                     {
                         Part_Tree.Columns[i].Width = w;
                     }

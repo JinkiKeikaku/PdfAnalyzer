@@ -106,5 +106,17 @@ namespace PdfAnalyzer.Properties {
                 this["TextEditorPath"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string BinaryEditorPath {
+            get {
+                return ((string)(this["BinaryEditorPath"]));
+            }
+            set {
+                this["BinaryEditorPath"] = value;
+            }
+        }
     }
 }

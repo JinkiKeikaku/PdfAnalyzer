@@ -29,28 +29,49 @@ namespace PdfAnalyzer
             DataContext = this;
         }
         public string TextEditorPath { get; set; } = Properties.Settings.Default.TextEditorPath;
+        public string BinaryEditorPath { get; set; } = Properties.Settings.Default.BinaryEditorPath;
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             Properties.Settings.Default.TextEditorPath = TextEditorPath;
+            Properties.Settings.Default.BinaryEditorPath = BinaryEditorPath;
             Close();
         }
 
         private void Parts_SelectTextEditorPath_Click(object sender, RoutedEventArgs e)
         {
+            var s = TextEditorPath;
+            SelectPath(TextEditorPath, s => { 
+                TextEditorPath = s;
+                OnPropertyChanged(nameof(TextEditorPath));
+            });
+        }
+
+        private void Parts_SelectBinaryEditorPath_Click(object sender, RoutedEventArgs e)
+        {
+            var s = BinaryEditorPath;
+            SelectPath(TextEditorPath, s => {
+                BinaryEditorPath = s;
+                OnPropertyChanged(nameof(BinaryEditorPath));
+            });
+        }
+
+        private void SelectPath(string path, Action<string> action)
+        {
             var f = new OpenFileDialog
             {
-                FileName = TextEditorPath,
+                FileName = path,
                 FilterIndex = 1,
                 Filter = "Exe file(.exe)|*.exe|All files (*.*)|*.*",
             };
 
             if (f.ShowDialog(Application.Current.MainWindow) == true)
             {
-                TextEditorPath = f.FileName;
-                OnPropertyChanged(nameof(TextEditorPath));
+                action(f.FileName);
             }
         }
+
+
         private void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

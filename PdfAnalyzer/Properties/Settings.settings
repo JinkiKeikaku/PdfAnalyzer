@@ -23,5 +23,8 @@
     <Setting Name="TextEditorPath" Type="System.String" Scope="User">
       <Value Profile="(Default)">notepad.exe</Value>
     </Setting>
+    <Setting Name="BinaryEditorPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

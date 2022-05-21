@@ -25,8 +25,6 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Label Grid.Row="0" Grid.Column="0" Content="Text editor"/>
                 <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
@@ -37,9 +35,18 @@
                             Click="Parts_SelectTextEditorPath_Click"
                             />
                 </StackPanel>
+                <Label Grid.Row="1" Grid.Column="0" Content="Binary editor"/>
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
+                    <TextBox x:Name="Part_BinaryEditorPath" Width="200" Margin="5"
+                         Text="{Binding BinaryEditorPath}"
+                         />
+                    <Button x:Name="Parts_SelectBinaryEditorPath" Width="30"  Content="..."
+                            Click="Parts_SelectBinaryEditorPath_Click"
+                            />
+                </StackPanel>
 
             </Grid>
-            <StackPanel Grid.Row="1" Orientation="Vertical">
+            <StackPanel Grid.Row="2" Orientation="Vertical">
                 <StackPanel
                     Margin="0,8,0,0"
                     HorizontalAlignment="Right"
