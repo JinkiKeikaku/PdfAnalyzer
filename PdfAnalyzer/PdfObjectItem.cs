@@ -11,8 +11,8 @@ namespace PdfAnalyzer
     class PdfObjectItem : TreeItem
     {
         public PdfObject PdfObject { get; }
-        public PdfObjectItem(PdfObject obj,  string name, string information) : 
-            base(name, information)
+        public PdfObjectItem(PdfObject obj,  string name, string typeName, string information) : 
+            base(name, typeName, information)
         {
             PdfObject = obj;
         }
@@ -21,14 +21,14 @@ namespace PdfAnalyzer
     class PdfDictionaryItem : PdfObjectItem
     {
         public PdfDictionaryItem(PdfDictionary dict, string name) : 
-            base(dict, name, $"Dictionary Count={dict.Count}")
+            base(dict, name, "Dictionary", $"Count={dict.Count}")
         {
         }
     }
     class PdfArrayItem : PdfObjectItem
     {
         public PdfArrayItem(PdfArray array, string name) : 
-            base(array, name, $"Array Count={array.Count}")
+            base(array, name, "Array", $"Count={array.Count}")
         {
         }
     }
@@ -36,7 +36,7 @@ namespace PdfAnalyzer
     class PdfReferenceItem : PdfObjectItem
     {
         public PdfReferenceItem(PdfReference r, string name) : 
-            base(r, name, r.ToString())
+            base(r, name, "Reference", r.ToString())
         {
         }
     }
@@ -45,7 +45,8 @@ namespace PdfAnalyzer
     {
         public PdfStream Parent { get; }
 
-        public PdfStreamDataItem(PdfStream parent) : base("Data", $"Length={parent.Data.Length}")
+        public PdfStreamDataItem(PdfStream parent) : 
+            base("Data", "Bytes", $"Length={parent.Data.Length}")
         {
             Parent = parent;
         }
@@ -76,7 +77,7 @@ namespace PdfAnalyzer
     class PdfXrefListItem : PdfObjectItem
     {
         public PdfXrefList XrefList { get; }
-        public PdfXrefListItem(PdfXrefList xrefList) : base(xrefList, "Xref", "")
+        public PdfXrefListItem(PdfXrefList xrefList) : base(xrefList, "Xref","Object", "")
         {
             XrefList = xrefList;
         }

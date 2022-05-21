@@ -68,16 +68,13 @@ namespace PdfAnalyzer
                 doc.Open(stream);
                 var root = doc.Root;
                 if (root == null) throw new Exception("Cannot get root dictionary.");
-                Datas.Add(new TreeItem("File name", path));
-                Datas.Add(new TreeItem("Pdf Version", doc.PdfVerson));
+                Datas.Add(new TreeItem("File name", "",path));
+                Datas.Add(new TreeItem("Pdf Version", "",doc.PdfVerson));
                 var rootItem = CreateItem(root, "/Root");
-                MakeNode(rootItem);
-                Datas.Add(rootItem);
+                Datas.Add(MakeNode(rootItem));
                 var xrefs = doc.GetXrefObjects();
-                var xrefObj = new PdfXrefList(xrefs);
-                var xrefItem = new PdfXrefListItem(xrefObj);
-                MakeNode(xrefItem);
-                Datas.Add(xrefItem);
+                var xrefItem = new PdfXrefListItem(new PdfXrefList(xrefs));
+                Datas.Add(MakeNode(xrefItem));
                 mFileName = path;
             }
             catch (Exception e)
@@ -94,11 +91,16 @@ namespace PdfAnalyzer
                 PdfDictionary d => new PdfDictionaryItem(d, name),
                 PdfArray a => new PdfArrayItem(a, name),
                 PdfReference r => new PdfReferenceItem(r, name),
-                _ => new PdfObjectItem(obj, name, obj?.ToString()??""),
+                PdfNumber => new PdfObjectItem(obj, name, "Number", obj?.ToString() ?? ""),
+                PdfName => new PdfObjectItem(obj, name, "Name", obj?.ToString() ?? ""),
+                PdfString => new PdfObjectItem(obj, name, "String", obj?.ToString() ?? ""),
+                PdfHexString => new PdfObjectItem(obj, name, "HexString", obj?.ToString() ?? ""),
+                PdfStream => new PdfObjectItem(obj, name, "Stream", obj?.ToString() ?? ""),
+                _ => new PdfObjectItem(obj, name, "", obj?.ToString()??""),
             };
         }
 
-        private void MakeNode(PdfObjectItem item)
+        private PdfObjectItem MakeNode(PdfObjectItem item)
         {
             switch (item.PdfObject)
             {
@@ -145,7 +147,7 @@ namespace PdfAnalyzer
                     }
                     break;
             }
-
+            return item;
         }
 
         private void Part_Tree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -164,10 +166,13 @@ namespace PdfAnalyzer
             if(filter == null || filter?.Name == "/FlateDecode")
             {
                 var s = Encoding.ASCII.GetString(bytes);
-                var w = new PdfStreamDataWindow();
-                w.Owner = this;
-                w.Part_Text.Text = s;
-                w.Show();
+                var path = System.IO.Path.GetTempFileName();
+                File.WriteAllText(path, s);
+                System.Diagnostics.Process.Start(Properties.Settings.Default.TextEditorPath, path);
+                //var w = new PdfStreamDataWindow();
+                //w.Owner = this;
+                //w.Part_Text.Text = s;
+                //w.Show();
             }
         }
 
@@ -212,33 +217,75 @@ namespace PdfAnalyzer
 
         }
 
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            SaveWindowBounds();
+            var settings = Properties.Settings.Default;
+            settings.Save();
+        }
 
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            RecoverWindowBounds();
+        }
 
-        //public class PdfNode
-        //{
-        //    public PdfObject PdfObject { get; set; }
+        private void Menu_Settings_Click(object sender, RoutedEventArgs e)
+        {
+            var w = new SettingsWindow();
+            w.Owner = this;
+            w.ShowDialog();
+        }
 
-        //    public string Name { get; set; }
-        //    public string Information {
-        //        get
-        //        {
-        //            switch (PdfObject)
-        //            {
-        //                case PdfDictionary:
-        //                    return "<<...>>";
-        //                case PdfArray:
-        //                    return "[...]";
-        //            }
-        //            return PdfObject?.ToString() ?? "";
-        //        }
-        //    }
-        //    public ObservableCollection<PdfNode> Children { get; set; } = new();
-        //    public PdfNode(string name, PdfObject obj)
-        //    {
-        //        Name = name;
-        //        PdfObject = obj;
-        //    }
-        //}
+        private void SaveWindowBounds()
+        {
+            var settings = Properties.Settings.Default;
+            settings.WindowMaximized = WindowState == WindowState.Maximized;
+            WindowState = WindowState.Normal; // 最大化解除
+            settings.WindowLeft = Left;
+            settings.WindowTop = Top;
+            settings.WindowWidth = Width;
+            settings.WindowHeight = Height;
 
+            var sb = new StringBuilder();
+            foreach(var t in Part_Tree.Columns)
+            {
+                sb.Append($"{t.ActualWidth.ToString()} ");
+            }
+            settings.HeaderSize = sb.ToString();
+        }
+
+        private void RecoverWindowBounds()
+        {
+            var settings = Properties.Settings.Default;
+            // 左
+            if (settings.WindowLeft >= 0 &&
+                (settings.WindowLeft + settings.WindowWidth) < SystemParameters.VirtualScreenWidth) { Left = settings.WindowLeft; }
+            // 上
+            if (settings.WindowTop >= 0 &&
+                (settings.WindowTop + settings.WindowHeight) < SystemParameters.VirtualScreenHeight) { Top = settings.WindowTop; }
+            // 幅
+            if (settings.WindowWidth > 0 &&
+                settings.WindowWidth <= SystemParameters.WorkArea.Width) { Width = settings.WindowWidth; }
+            // 高さ
+            if (settings.WindowHeight > 0 &&
+                settings.WindowHeight <= SystemParameters.WorkArea.Height) { Height = settings.WindowHeight; }
+            // 最大化
+            if (settings.WindowMaximized)
+            {
+                // ロード後に最大化
+                Loaded += (o, e) => WindowState = WindowState.Maximized;
+            }
+            var s = settings.HeaderSize.Split(' ');
+            if(s.Length > 0)
+            {
+                for(var i = 0; i < s.Length && i < Part_Tree.Columns.Count; i++)
+                {
+                    if(double.TryParse(s[i], out var w))
+                    {
+                        Part_Tree.Columns[i].Width = w;
+                    }
+                }
+            }
+        }
     }
 }
