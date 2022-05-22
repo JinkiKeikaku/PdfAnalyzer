@@ -7,6 +7,7 @@
     xmlns:tlv="clr-namespace:PdfAnalyzer.TreeListView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="PdfAnalyzer"
+    Icon="/Icon/PdfAnalyzerIcon.png"
     Loaded="Window_Loaded"
     Closing="Window_Closing"
     Width="1000"

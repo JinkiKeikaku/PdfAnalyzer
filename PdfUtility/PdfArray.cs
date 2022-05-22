@@ -7,9 +7,11 @@ using System.Threading.Tasks;
 
 namespace PdfUtility
 {
+    /// <summary>
+    /// PDFの配列オブジェクト
+    /// </summary>
     public class PdfArray : PdfObject, IEnumerable<PdfObject>
     {
-        List<PdfObject> mElements = new();
 
         public List<PdfObject> Elements => mElements;
 
@@ -28,17 +30,20 @@ namespace PdfUtility
 
         public T? GetAt<T>(int index) where T : PdfObject => mElements[index] as T;
 
+        /// <inheritdoc/>
         public override bool Equals(object? obj)
         {
             return obj is PdfArray array &&
                    EqualityComparer<List<PdfObject>>.Default.Equals(Elements, array.Elements);
         }
 
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             return HashCode.Combine(Elements);
         }
 
+        /// <inheritdoc/>
         public override string ToString()
         {
             var sb = new StringBuilder();
@@ -61,5 +66,6 @@ namespace PdfUtility
         {
             return mElements.GetEnumerator();
         }
+        private List<PdfObject> mElements = new();
     }
 }

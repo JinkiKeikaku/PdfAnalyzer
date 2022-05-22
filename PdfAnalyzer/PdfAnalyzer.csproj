@@ -12,6 +12,8 @@
     <Authors>Junkbulk</Authors>
     <Company>JinkiKeikaku</Company>
     <Copyright>Copyright © 2022 JinkiKeikaku</Copyright>
+    <PackageIcon>PdfAnalyzerIcon.png</PackageIcon>
+    <ApplicationIcon>Icon\PdfAnalyzerIcon.ico</ApplicationIcon>
 
   </PropertyGroup>
 
@@ -23,8 +25,18 @@
     <Page Remove="Theme\**" />
   </ItemGroup>
 
+
+  <ItemGroup>
+    <Content Include="Icon\PdfAnalyzerIcon.ico" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\PdfUtility\PdfUtility.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Icon\PdfAnalyzerIcon.ico" />
+    <Resource Include="Icon\PdfAnalyzerIcon.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,6 +48,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Icon\PdfAnalyzerIcon.ico">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="Icon\PdfAnalyzerIcon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Update="Properties\Settings.settings">
       <Generator>PublicSettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

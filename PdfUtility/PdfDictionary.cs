@@ -8,9 +8,11 @@ using System.Threading.Tasks;
 
 namespace PdfUtility
 {
+    /// <summary>
+    /// PDFの辞書オブジェクト
+    /// </summary>
     public class PdfDictionary : PdfObject, IEnumerable<KeyValuePair<string, PdfObject>>
     {
-        Dictionary<string, PdfObject> mDict = new();
 
         public PdfDictionary() { }
 
@@ -24,6 +26,7 @@ namespace PdfUtility
             mDict.Add(key.Name, value);
         }
 
+        /// <inheritdoc/>
         public override string ToString()
         {
             var sb = new StringBuilder();
@@ -101,6 +104,7 @@ namespace PdfUtility
         {
             return mDict.GetEnumerator();
         }
+        private Dictionary<string, PdfObject> mDict = new();
 
     }
 }
