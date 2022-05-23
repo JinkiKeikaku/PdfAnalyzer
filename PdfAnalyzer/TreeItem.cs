@@ -10,9 +10,9 @@ namespace PdfAnalyzer
     public class TreeItem
     {
         public ObservableCollection<TreeItem> Children { get; } = new();
-        virtual public string Name { get; }
-        virtual public string TypeName { get; }
-        virtual public string Information { get; }
+        public string Name { get; }
+        public string TypeName { get; }
+        public string Information { get; }
 
         public TreeItem(string name, string typeName, string information)
         {

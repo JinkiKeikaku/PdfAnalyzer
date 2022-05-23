@@ -44,13 +44,19 @@
             </MenuItem>
         </Menu>
 
+
+
+
         <tlv:TreeListView
             x:Name="Part_Tree"
             Grid.Row="1"
+            
             ItemsSource="{Binding Datas}"
             MouseRightButtonUp="Part_Tree_MouseRightButtonUp"
             MouseDoubleClick="Part_Tree_MouseDoubleClick"
-            AllowsColumnReorder="True">
+            AllowsColumnReorder="True"
+            >
+            
             <tlv:TreeListView.ItemTemplate>
                 <HierarchicalDataTemplate 
                     ItemsSource="{Binding Children}" />

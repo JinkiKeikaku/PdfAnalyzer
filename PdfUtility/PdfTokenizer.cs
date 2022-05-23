@@ -100,7 +100,7 @@ namespace PdfUtility
         {
             mStream = r;
             foreach (var c in "\0\t\r\n\b\f ") mWhiteSpaceCharTable[c] = true;
-            foreach (var c in ",()<>[]{}/%") mDelimiterCharTable[c] = true;
+            foreach (var c in "()<>[]{}/%") mDelimiterCharTable[c] = true;
             foreach (var c in "0123456789abcdefABCDEF") mHexCharTable[c] = true;
             foreach (var c in "+-.0123456789") mFirstNumberCharTable[c] = true;
             foreach (var c in ".0123456789") mNumberCharTable[c] = true;
@@ -256,6 +256,9 @@ namespace PdfUtility
                         {
                             if (GetChar() < 0 || IsWhiteSpace(mChar) || IsDelimiter(mChar))
                             {
+
+                                var aa = Encoding.ASCII.GetString(bb.ToArray())!;
+
                                 Back();
                                 CurrentToken = new Token(TokenKind.Name, bb.ToArray());
                                 bb.Clear();

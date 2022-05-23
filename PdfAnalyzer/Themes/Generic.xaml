@@ -55,6 +55,7 @@
                 <Setter Property="Foreground" 
                     Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
             </Trigger>
+
         </ControlTemplate.Triggers>
     </ControlTemplate>
 

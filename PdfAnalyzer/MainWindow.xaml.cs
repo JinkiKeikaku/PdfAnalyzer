@@ -15,6 +15,7 @@ namespace PdfAnalyzer
     /// </summary>
     public partial class MainWindow : Window
     {
+
         public MainWindow()
         {
             if (Properties.Settings.Default.IsUpgrade == false)
@@ -25,6 +26,17 @@ namespace PdfAnalyzer
             }
             InitializeComponent();
             DataContext = this;
+            var r = new TreeItem("root", "testtype", "info");
+            for(int i = 0; i < 6000; i++)
+            {
+                r.Children.Add(new TreeItem(i.ToString(), "testtype", "info"));
+            }
+            Datas.Add(r);
+
+
+
+
+
         }
 
         public ObservableCollection<TreeItem> Datas { get; } = new();
@@ -159,5 +171,6 @@ namespace PdfAnalyzer
                 }
             }
         }
+
     }
 }

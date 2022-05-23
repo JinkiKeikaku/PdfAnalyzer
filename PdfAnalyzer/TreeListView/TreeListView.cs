@@ -25,6 +25,7 @@ namespace PdfAnalyzer.TreeListView
         {
             //Override the default style and the default control template
             DefaultStyleKeyProperty.OverrideMetadata(typeof(TreeListView), new FrameworkPropertyMetadata(typeof(TreeListView)));
+
         }
 
         /// <summary>
@@ -35,7 +36,6 @@ namespace PdfAnalyzer.TreeListView
             Columns = new GridViewColumnCollection();
         }
 
-        #region Properties
         /// <summary>
         /// Gets or sets the collection of System.Windows.Controls.GridViewColumn 
         /// objects that is defined for this TreeListView.
@@ -55,9 +55,7 @@ namespace PdfAnalyzer.TreeListView
             get { return (bool)GetValue(AllowsColumnReorderProperty); }
             set { SetValue(AllowsColumnReorderProperty, value); }
         }
-        #endregion
 
-        #region Static Dependency Properties
         // Using a DependencyProperty as the backing store for AllowsColumnReorder.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty AllowsColumnReorderProperty =
             DependencyProperty.Register("AllowsColumnReorder", typeof(bool), typeof(TreeListView), new UIPropertyMetadata(null));
@@ -67,7 +65,10 @@ namespace PdfAnalyzer.TreeListView
             DependencyProperty.Register("Columns", typeof(GridViewColumnCollection),
             typeof(TreeListView),
             new UIPropertyMetadata(null));
-        #endregion
+
+        
+
+
     }
 
     /// <summary>
@@ -81,8 +82,6 @@ namespace PdfAnalyzer.TreeListView
     public class TreeListViewConverter : IValueConverter
     {
         public const double Indentation = 10;
-
-        #region IValueConverter Members
 
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
@@ -114,8 +113,6 @@ namespace PdfAnalyzer.TreeListView
         {
             throw new NotSupportedException("This method is not supported.");
         }
-
-        #endregion
     }
 
 }
