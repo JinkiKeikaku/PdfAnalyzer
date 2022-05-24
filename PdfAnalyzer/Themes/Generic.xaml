@@ -7,6 +7,8 @@
     <!--Converter for Indentation of items-->
     <local:TreeListViewConverter x:Key="TreeListViewConverter"/>
 
+
+
     <!--Control Template for TreeViewItem's.-->
     <ControlTemplate TargetType="TreeViewItem" x:Key="TreeListViewItem">
         <!--Grid containing the current information and the subnodes.-->
@@ -14,10 +16,10 @@
             <!--Border wrapping the content presenter.-->
             <Border x:Name="Border">
                 <!--GridViewRowPrsenter containing the current information.-->
-                <GridViewRowPresenter Content="{TemplateBinding Header}"
-                    Columns="{Binding Columns, 
-                    RelativeSource={RelativeSource Mode=FindAncestor, 
-                    AncestorType=local:TreeListView}}"/>
+                    <GridViewRowPresenter Content="{TemplateBinding Header}"
+                        Columns="{Binding Columns, 
+                        RelativeSource={RelativeSource Mode=FindAncestor, 
+                        AncestorType=local:TreeListView}}"/>
             </Border>
             <!--ItemsPresenter containing the subnodes-->
             <ItemsPresenter x:Name="ItemsPresenter" Visibility="Collapsed"/>
@@ -55,7 +57,6 @@
                 <Setter Property="Foreground" 
                     Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
             </Trigger>
-
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
@@ -77,6 +78,9 @@
             </DataTrigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
+    
+    
+    
 
     <!--Apply this style to all controls of type 'TreeListView'.-->
     <Style TargetType="{x:Type local:TreeListView}">
@@ -101,7 +105,7 @@
                         <!--ScrollViewer providing horizontal scrolling functionality 
                         for both, content and headers.-->
                         <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                                      VerticalScrollBarVisibility="Disabled">
+                            VerticalScrollBarVisibility="Disabled">
                             <!--Grid containing the header row and all the content rows.-->
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -115,9 +119,10 @@
                                     AllowsColumnReorder="{TemplateBinding AllowsColumnReorder}"/>
                                 <!--ScrollViewer providing vertical scrolling
                                 functionality for the content.-->
+
                                 <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                                              VerticalScrollBarVisibility="Auto"
-                                              Grid.Row="1">
+                                    VerticalScrollBarVisibility="Auto"
+                                    Grid.Row="1">
                                     <!--ItemsPresenter containg the content.-->
                                     <ItemsPresenter/>
                                 </ScrollViewer>

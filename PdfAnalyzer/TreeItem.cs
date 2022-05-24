@@ -13,12 +13,16 @@ namespace PdfAnalyzer
         public string Name { get; }
         public string TypeName { get; }
         public string Information { get; }
-
         public TreeItem(string name, string typeName, string information)
         {
             Name = name;
             TypeName = typeName;
             Information = information;
+        }
+
+        public override string ToString()
+        {
+            return $"{Name} {TypeName} {Information}";
         }
     }
 }

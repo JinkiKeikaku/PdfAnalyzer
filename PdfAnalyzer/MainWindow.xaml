@@ -47,22 +47,23 @@
 
 
 
-        <tlv:TreeListView
+        <TreeView
             x:Name="Part_Tree"
             Grid.Row="1"
-            
+            VirtualizingPanel.IsVirtualizing="True"
             ItemsSource="{Binding Datas}"
             MouseRightButtonUp="Part_Tree_MouseRightButtonUp"
             MouseDoubleClick="Part_Tree_MouseDoubleClick"
-            AllowsColumnReorder="True"
             >
             
-            <tlv:TreeListView.ItemTemplate>
+            <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate 
-                    ItemsSource="{Binding Children}" />
-            </tlv:TreeListView.ItemTemplate>
+                    ItemsSource="{Binding Children}" >
+                    <TextBlock Text="{Binding }"/>
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
 
-            <tlv:TreeListView.Columns>
+            <!--<TreeView.Columns>
                 <GridViewColumn Width="200" Header="Name">
                     <GridViewColumn.CellTemplate>
                         <DataTemplate>
@@ -88,7 +89,7 @@
                         </DataTemplate>
                     </GridViewColumn.CellTemplate>
                 </GridViewColumn>
-            </tlv:TreeListView.Columns>
-        </tlv:TreeListView>
+            </TreeView.Columns>-->
+        </TreeView>
     </Grid>
 </Window>

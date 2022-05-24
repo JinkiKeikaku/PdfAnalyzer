@@ -27,11 +27,11 @@ namespace PdfAnalyzer
             InitializeComponent();
             DataContext = this;
             var r = new TreeItem("root", "testtype", "info");
-            for(int i = 0; i < 6000; i++)
+            Datas.Add(r);
+            for (int i = 0; i < 6000; i++)
             {
                 r.Children.Add(new TreeItem(i.ToString(), "testtype", "info"));
             }
-            Datas.Add(r);
 
 
 
@@ -130,12 +130,12 @@ namespace PdfAnalyzer
             settings.WindowWidth = Width;
             settings.WindowHeight = Height;
 
-            var sb = new StringBuilder();
-            foreach (var t in Part_Tree.Columns)
-            {
-                sb.Append($"{t.ActualWidth.ToString()} ");
-            }
-            settings.HeaderSize = sb.ToString();
+            //var sb = new StringBuilder();
+            //foreach (var t in Part_Tree.Columns)
+            //{
+            //    sb.Append($"{t.ActualWidth.ToString()} ");
+            //}
+            //settings.HeaderSize = sb.ToString();
         }
 
         private void RecoverWindowBounds()
@@ -159,17 +159,17 @@ namespace PdfAnalyzer
                 // ロード後に最大化
                 Loaded += (o, e) => WindowState = WindowState.Maximized;
             }
-            var s = settings.HeaderSize.Split(' ');
-            if (s.Length > 0)
-            {
-                for (var i = 0; i < s.Length && i < Part_Tree.Columns.Count; i++)
-                {
-                    if (double.TryParse(s[i], out var w))
-                    {
-                        Part_Tree.Columns[i].Width = w;
-                    }
-                }
-            }
+            //var s = settings.HeaderSize.Split(' ');
+            //if (s.Length > 0)
+            //{
+            //    for (var i = 0; i < s.Length && i < Part_Tree.Columns.Count; i++)
+            //    {
+            //        if (double.TryParse(s[i], out var w))
+            //        {
+            //            Part_Tree.Columns[i].Width = w;
+            //        }
+            //    }
+            //}
         }
 
     }

@@ -143,7 +143,7 @@ namespace PdfAnalyzer
         /// <summary>
         /// 参照されたXrefオブジェクトのTreeListViewのアイテムを選択する。
         /// </summary>
-        public static void SelectXrefObject(TreeListView.TreeListView treeView, PdfReference r)
+        public static void SelectXrefObject(TreeView treeView, PdfReference r)
         {
             var x = VisualTreeExt.GetDescendants<TreeViewItem>(treeView).FirstOrDefault(tvi =>
             {
@@ -170,7 +170,7 @@ namespace PdfAnalyzer
         /// </summary>
         /// <param name="treeView"></param>
         /// <returns></returns>
-        public static ContextMenu CreateTreeViewContectMenu(TreeListView.TreeListView treeView)
+        public static ContextMenu CreateTreeViewContectMenu(TreeView treeView)
         {
             var menu = new ContextMenu();
             if (treeView.SelectedItem is PdfObjectItem item)
