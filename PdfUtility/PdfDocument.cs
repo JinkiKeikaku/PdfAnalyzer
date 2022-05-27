@@ -133,12 +133,29 @@ namespace PdfUtility
             return GetRectFromPage(parent, name, inheritable);
         }
 
+        PdfNumber? GetNumberFromPage(PdfDictionary pdfDic, string name, bool inheritable)
+        {
+            var a = pdfDic.GetValue<PdfNumber>(name);
+            if (a != null) return a;
+            if (!inheritable) return null;
+            var parent = Parser.GetEntityObject(pdfDic.GetValue(name)) as PdfDictionary;
+            if (parent == null) return null;
+            return GetNumberFromPage(parent, name, inheritable);
+        }
+
+
         PdfPageAttribute GetPageAttribute(PdfDictionary pdfDic)
         {
             PdfPageAttribute pdfPageAttribute = new();
             var mediaBox = GetRectFromPage(pdfDic, "/MediaBox", true);
             if (mediaBox == null) throw new Exception("The page has no MediaBox.");
             pdfPageAttribute.MediaBox = mediaBox;
+            var cropBox = GetRectFromPage(pdfDic, "/CropBox", true);
+            pdfPageAttribute.CropBox = cropBox ?? mediaBox.Copy();
+            if (mediaBox == null) throw new Exception("The page has no MediaBox.");
+            var rotate = GetNumberFromPage(pdfDic, "/MediaBox", true);
+            if (rotate != null) pdfPageAttribute.Rotate = rotate.IntValue;
+
             return pdfPageAttribute;
         }
 
