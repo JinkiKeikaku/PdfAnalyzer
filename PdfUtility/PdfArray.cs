@@ -30,6 +30,16 @@ namespace PdfUtility
 
         public T? GetAt<T>(int index) where T : PdfObject => mElements[index] as T;
 
+        public PdfRectangle GetRectangle()
+        {
+            var x1 = GetAt<PdfNumber>(0)!.DoubleValue;
+            var y1 = GetAt<PdfNumber>(1)!.DoubleValue;
+            var x2 = GetAt<PdfNumber>(2)!.DoubleValue;
+            var y2 = GetAt<PdfNumber>(3)!.DoubleValue;
+            return new PdfRectangle(x1, y1, x2, y2);
+        }
+
+
         /// <inheritdoc/>
         public override bool Equals(object? obj)
         {

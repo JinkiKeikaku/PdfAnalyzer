@@ -32,7 +32,7 @@ namespace PdfUtility
         {
             var sb = new StringBuilder();
             sb.Append('<');
-            sb.Append(BitConverter.ToString(Bytes));
+            sb.Append(BitConverter.ToString(Bytes).Replace("-", string.Empty));
             sb.Append('>');
             return sb.ToString();
         }

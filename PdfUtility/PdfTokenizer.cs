@@ -153,7 +153,7 @@ namespace PdfUtility
         public bool IsNextTokenStream()
         {
             var pos = StreamPosition;
-            GetChar();
+            if(GetChar() < 0)   return false;
             Skip();
             StreamPosition--;
             var buf2 = new byte[mStreamAsciiChars.Length];

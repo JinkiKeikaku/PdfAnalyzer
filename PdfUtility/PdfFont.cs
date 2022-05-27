@@ -12,7 +12,9 @@ namespace PdfUtility
     {
         public string Name;
         public PdfDictionary FontDict;
+        public PdfRectangle FontBBox = new(0, 0, 1000, 1000);
         private Dictionary<int, Char> mCMap = new();
+
 
         public PdfFont(string name, PdfDictionary fontDict)
         {
@@ -33,6 +35,15 @@ namespace PdfUtility
 
         public string? ConvertString(byte[] bytes)
         {
+            var typ = FontDict.GetValue<PdfName>("/Subtype");
+            if(typ?.Name == "/Type1")
+            {
+                var ms = new MemoryStream(bytes);
+                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                using var sr = new StreamReader(ms, Encoding.ASCII);
+                return sr.ReadToEnd();
+            }
+
             var encoding = FontDict.GetValue<PdfName>("/Encoding");
             switch (encoding?.Name)
             {
@@ -54,27 +65,26 @@ namespace PdfUtility
                 case "/Identity-H":
                     {
                         var sb = new StringBuilder();
-                        for(int i = 0; i < bytes.Length; i += 2)
+                        for (int i = 0; i < bytes.Length; i += 2)
                         {
-                            var c = (i + 1) < bytes.Length ? (bytes[i] << 8) + bytes[i + 1] : bytes[i];
-                            sb.Append(mCMap.GetValueOrDefault(c, '?'));
+                            var c = (i + 1) < bytes.Length ? (((int)bytes[i]) << 8) + bytes[i + 1] : bytes[i];
+                            sb.Append(mCMap.GetValueOrDefault(c, (char)c));
                         }
                         return sb.ToString();
                     }
 
             }
-            return "unknown string";
         }
 
         public void InitMap(PdfParser parser)
         {
             if (FontDict.ContainsKey("/ToUnicode"))
             {
-                var tu = parser.GetEntityObject(FontDict.GetValue<PdfObject>("/ToUnicode"));
-                if(tu is PdfStream ts)
+                var tu = parser.GetEntityObject(FontDict.GetValue("/ToUnicode"));
+                if (tu is PdfStream ts)
                 {
                     var buf = ts.GetExtractedBytes();
-                    if(buf != null)
+                    if (buf != null)
                     {
                         var ms = new MemoryStream(buf);
                         var sr = new StreamReader(ms, Encoding.ASCII);
@@ -87,8 +97,40 @@ namespace PdfUtility
                         ParserCid(parser.Clone(ms));
                     }
                 }
-
             }
+            else if (FontDict.ContainsKey("/Encoding"))
+            {
+                var ed = parser.GetEntityObject(FontDict.GetValue("/Encoding")) as PdfDictionary;
+                if (ed != null)
+                {
+
+
+
+                }
+            }
+            var fontDescriptor = parser.GetEntityObject(FontDict.GetValue("/FontDescriptor")) as PdfDictionary;
+            if (fontDescriptor == null)
+            {
+                var dd = parser.GetEntityObject(FontDict.GetValue("/DescendantFonts")) as PdfArray;
+                if (dd != null && dd.Count > 0)
+                {
+                    if (parser.GetEntityObject(dd[0]) is PdfDictionary d)
+                    {
+                        fontDescriptor = parser.GetEntityObject(d.GetValue("/FontDescriptor")) as PdfDictionary;
+                    }
+                }
+                if (fontDescriptor != null)
+                {
+                    var bb = GetFontBBox(parser, fontDescriptor);
+                    if (bb != null) FontBBox = bb;
+                }
+            }
+        }
+
+        PdfRectangle? GetFontBBox(PdfParser parser, PdfDictionary fontDescriptor)
+        {
+            var a = parser.GetEntityObject(fontDescriptor.GetValue("/FontBBox")) as PdfArray;
+            return a?.GetRectangle();
         }
 
         enum CidState
@@ -121,8 +163,8 @@ namespace PdfUtility
                             for (var i = 0; i < stack.Count - 1; i += 3)
                             {
                                 var srcCode0 = (stack[i] as PdfHexString)!.ConvertToInt();
-                                var srcCode1 = (stack[i+1] as PdfHexString)!.ConvertToInt();
-                                var dst = stack[i+2];
+                                var srcCode1 = (stack[i + 1] as PdfHexString)!.ConvertToInt();
+                                var dst = stack[i + 2];
                                 if (dst is PdfHexString dh)
                                 {
                                     var dstCode = dh.ConvertToInt();
@@ -146,8 +188,8 @@ namespace PdfUtility
                             for (var i = 0; i < stack.Count - 1; i += 2)
                             {
                                 var srcCode = (stack[i] as PdfHexString)!.ConvertToInt();
-                                var dst = stack[i+1];
-                                if(dst is PdfHexString dh)
+                                var dst = stack[i + 1];
+                                if (dst is PdfHexString dh)
                                 {
                                     var dstCode = dh.ConvertToInt();
                                     mCMap.Add(srcCode, (Char)dstCode);

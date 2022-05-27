@@ -21,6 +21,9 @@ namespace PdfUtility
             Top = top;
         }
 
+        public double Width => Right - Left;
+        public double Height => Top - Bottom;
+
         public override bool Equals(object? obj)
         {
             return obj is PdfRectangle rectangle &&

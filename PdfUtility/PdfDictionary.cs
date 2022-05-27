@@ -47,12 +47,15 @@ namespace PdfUtility
         public bool ContainsKey(PdfName name) => mDict.ContainsKey(name.Name);
         public bool ContainsKey(string key) => mDict.ContainsKey(key);
 
-        public T? GetValue<T>(PdfName name) where T : PdfObject => GetValue<T>(name.Name);
-        public T? GetValue<T>(string name) where T : PdfObject
+        public PdfObject? GetValue(PdfName name) => GetValue(name.Name);
+        public PdfObject? GetValue(string name)
         {
-            if(mDict.TryGetValue(name, out var v))   return v as T;
+            if (mDict.TryGetValue(name, out var v)) return v;
             return null;
         }
+
+        public T? GetValue<T>(PdfName name) where T : PdfObject => GetValue<T>(name.Name);
+        public T? GetValue<T>(string name) where T : PdfObject => GetValue(name) as T;
 
         public int GetInt(string name) => (int)GetDouble(name);
         public double GetDouble(PdfName name) => GetDouble(name.Name);

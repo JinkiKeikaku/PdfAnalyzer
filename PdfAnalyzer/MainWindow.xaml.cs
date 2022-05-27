@@ -69,6 +69,8 @@ namespace PdfAnalyzer
                 //Treeを作成。
                 Datas.Add(new TreeItem("File name", "", path));
                 Datas.Add(new TreeItem("Pdf Version", "", doc.PdfVerson));
+                var traliler = PdfAnalyzeHelper.CreateItem(doc.Trailer!, "Trailer");
+                Datas.Add(PdfAnalyzeHelper.MakeNode(traliler));
                 var root = doc.Root;
                 if (root == null) throw new Exception("Cannot get root dictionary.");
                 var rootItem = PdfAnalyzeHelper.CreateItem(root, "/Root");
