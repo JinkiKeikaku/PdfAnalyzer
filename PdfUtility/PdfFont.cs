@@ -33,7 +33,7 @@ namespace PdfUtility
         }
 
 
-        public string? ConvertString(byte[] bytes)
+        public string ConvertString(byte[] bytes)
         {
             var typ = FontDict.GetValue<PdfName>("/Subtype");
             if(typ?.Name == "/Type1")

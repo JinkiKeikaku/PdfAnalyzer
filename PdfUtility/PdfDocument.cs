@@ -57,7 +57,7 @@ namespace PdfUtility
             }
 
             Root = GetRootObject() ?? throw new Exception("cannot find root object.");
-            RootPages = (mParser.GetEntityObject(Root.GetValue("/Pages")) as PdfDictionary)!;
+            RootPages = GetEntityObject<PdfDictionary>(Root.GetValue("/Pages"));
         }
 
         public void Close()
@@ -102,7 +102,7 @@ namespace PdfUtility
             for (var i = 0; i < kids.Count; i++)
             {
                 var kid = kids[i];
-                if (Parser.GetEntityObject(kid) is not PdfDictionary pd) throw new Exception("kid is not dictionary.");
+                var pd = GetEntityObject<PdfDictionary>(kid) ?? throw new Exception("kid is not dictionary.");
                 switch (pd.GetValue<PdfName>("/Type")?.Name)
                 {
                     case "/Page":
@@ -123,12 +123,20 @@ namespace PdfUtility
 
         }
 
+
+        public PdfObject? GetEntityObject(PdfObject? obj) {
+            return Parser.GetEntityObject(obj);
+        }
+
+        public T? GetEntityObject<T>(PdfObject? obj) where T : PdfObject => GetEntityObject(obj) as T;
+
+
         PdfRectangle? GetRectFromPage(PdfDictionary pdfDic, string name, bool inheritable)
         {
             var a = pdfDic.GetValue<PdfArray>(name);
             if (a != null) return a.GetRectangle();
             if(!inheritable)    return null;
-            var parent = Parser.GetEntityObject(pdfDic.GetValue(name)) as PdfDictionary;
+            var parent = GetEntityObject<PdfDictionary>(pdfDic.GetValue(name));
             if(parent == null) return null;
             return GetRectFromPage(parent, name, inheritable);
         }
@@ -138,7 +146,7 @@ namespace PdfUtility
             var a = pdfDic.GetValue<PdfNumber>(name);
             if (a != null) return a;
             if (!inheritable) return null;
-            var parent = Parser.GetEntityObject(pdfDic.GetValue(name)) as PdfDictionary;
+            var parent = GetEntityObject<PdfDictionary>(pdfDic.GetValue(name));
             if (parent == null) return null;
             return GetNumberFromPage(parent, name, inheritable);
         }
@@ -153,7 +161,7 @@ namespace PdfUtility
             var cropBox = GetRectFromPage(pdfDic, "/CropBox", true);
             pdfPageAttribute.CropBox = cropBox ?? mediaBox.Copy();
             if (mediaBox == null) throw new Exception("The page has no MediaBox.");
-            var rotate = GetNumberFromPage(pdfDic, "/MediaBox", true);
+            var rotate = GetNumberFromPage(pdfDic, "/Rotate", true);
             if (rotate != null) pdfPageAttribute.Rotate = rotate.IntValue;
 
             return pdfPageAttribute;
@@ -164,7 +172,7 @@ namespace PdfUtility
             if (RootPages == null) throw new Exception("Root pages is null. maybe document is not open.");
             var pageDic = GetPageDictionary(RootPages, pageNumber, 0);
             if (pageDic == null) throw new Exception($"cannot find page {pageNumber}");
-            var contents = Parser.GetEntityObject(pageDic.GetValue("/Contents"));
+            var contents = GetEntityObject(pageDic.GetValue("/Contents"));
             PdfArray contentsArray = new();
             if (contents is PdfStream pdfStream)
             {
@@ -176,13 +184,15 @@ namespace PdfUtility
             }
             var page = new PdfPage();
             page.Attribute = GetPageAttribute(pageDic);
-            var resources = Parser.GetEntityObject(pageDic.GetValue("/Resources"));
-            page.ResourcesDictionary = resources as PdfDictionary;
-            if(page.ResourcesDictionary != null)    page.Fonts = GetFonts(page.ResourcesDictionary);
+            var resources = GetEntityObject<PdfDictionary>(pageDic.GetValue("/Resources"));
+            if (resources == null) throw new Exception("Page has no resource dictionary.");
+            page.ResourcesDictionary = resources;
+//            page.Fonts = GetFonts(page.ResourcesDictionary);
 
             for (int i = 0; i < contentsArray.Count; i++)
             {
-                if (Parser.GetEntityObject(contentsArray.GetAt<PdfObject>(i)) is PdfStream contentsStream)
+                var contentsStream = GetEntityObject<PdfStream>(contentsArray.GetAt<PdfObject>(i));
+                if (contentsStream != null)
                 {
                     var bytes = contentsStream.GetExtractedBytes();
                     if (bytes != null)
@@ -197,14 +207,14 @@ namespace PdfUtility
         public List<PdfFont> GetFonts(PdfDictionary resource)
         {
             var fonts = new List<PdfFont>();
-            var fontDic = mParser?.GetEntityObject(resource.GetValue("/Font")) as PdfDictionary;
+            var fontDic = GetEntityObject<PdfDictionary>(resource.GetValue("/Font"));
             if (fontDic == null) return fonts;
             int n = fontDic.Count;
             for (var i = 0; i < n; i++)
             {
                 var p = fontDic.GetAt(i);
                 var name = p.Key;
-                var dic = Parser.GetEntityObject(p.Value) as PdfDictionary;
+                var dic = GetEntityObject<PdfDictionary>(p.Value);
                 if (dic != null)
                 {
                     var f = new PdfFont(name, dic);
@@ -215,12 +225,17 @@ namespace PdfUtility
             return fonts;
         }
 
+        public PdfStream? GetXObject(PdfDictionary resource, string name)
+        {
+            var xobjectDic = GetEntityObject<PdfDictionary>(resource.GetValue("/XObject"));
+            return GetEntityObject<PdfStream>(xobjectDic?.GetValue(name));
+        }
+
         private PdfDictionary GetRootObject()
         {
             var obj = Trailer?.GetValue<PdfReference>("/Root");
             if (obj == null) throw new Exception("cannot find /Root");
-            if (Parser.GetEntityObject(obj) is not PdfDictionary root) throw new Exception("cannot parse root object");
-            return root;
+            return GetEntityObject<PdfDictionary>(obj) ?? throw new Exception("cannot parse root object");
         }
     }
 }

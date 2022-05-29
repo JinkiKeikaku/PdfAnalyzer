@@ -26,17 +26,12 @@ namespace PdfAnalyzer
             }
             InitializeComponent();
             DataContext = this;
-            var r = new TreeItem("root", "testtype", "info");
-            Datas.Add(r);
-            for (int i = 0; i < 6000; i++)
-            {
-                r.Children.Add(new TreeItem(i.ToString(), "testtype", "info"));
-            }
-
-
-
-
-
+            //var r = new TreeItem("root", "testtype", "info");
+            //Datas.Add(r);
+            //for (int i = 0; i < 6000; i++)
+            //{
+            //    r.Children.Add(new TreeItem(i.ToString(), "testtype", "info"));
+            //}
         }
 
         public ObservableCollection<TreeItem> Datas { get; } = new();
@@ -100,6 +95,36 @@ namespace PdfAnalyzer
         {
             var menu = PdfAnalyzeHelper.CreateTreeViewContectMenu(Part_Tree);
             if (menu.Items.Count > 0) menu.IsOpen = true;
+        }
+
+        private void Window_Drop(object sender, System.Windows.DragEventArgs e)
+        {
+            Debug.WriteLine("Window_Drop");
+            if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop, true))
+            {
+                if (e.Data.GetData(System.Windows.DataFormats.FileDrop) is string[] files)
+                {
+                    OpenPdf(files[0]);
+                }
+            }
+        }
+
+        private void Window_PreviewDragOver(object sender, System.Windows.DragEventArgs e)
+        {
+            Debug.WriteLine("Window_PreviewDragOver");
+            if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop, true))
+            {
+                e.Effects = System.Windows.DragDropEffects.None;
+                if (e.Data.GetData(System.Windows.DataFormats.FileDrop) is string[] files)
+                {
+                    // TODO Check acceptable.
+                    {
+                        e.Effects = System.Windows.DragDropEffects.Copy;
+                        e.Handled = true;
+                        return;
+                    }
+                }
+            }
         }
 
         private void Menu_Settings_Click(object sender, RoutedEventArgs e)

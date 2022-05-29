@@ -16,9 +16,9 @@ namespace PdfUtility
     public class PdfPage
     {
         public PdfPageAttribute Attribute = new();
-        public PdfDictionary? ResourcesDictionary { get; set; }
+        public PdfDictionary ResourcesDictionary { get; set; } = null!;
         public List<byte[]> ContentsList { get; set; } = new();
-        public List<PdfFont> Fonts { get; set; } = new();
+//        public List<PdfFont> Fonts { get; set; } = new();
     }
 
 }

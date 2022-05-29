@@ -165,10 +165,11 @@ namespace PdfUtility
                     var s = t.GetString();
                     if (s == "null") return new PdfNull();
                     return new PdfIdentifier(s);
+                case TokenKind.Eof:
+                    return null;
                 default:
                     Debug.WriteLine($"Unknown token:{t}");
                     break;
-
             }
             if (t.Kind == TokenKind.Eof) return null;
             throw new Exception("Cannot parse unknown object");

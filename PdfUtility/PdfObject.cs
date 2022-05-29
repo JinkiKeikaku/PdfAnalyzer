@@ -8,6 +8,10 @@ namespace PdfUtility
 {
     public class PdfObject
     {
+        public override string ToString()
+        {
+            return "PdfObject";
+        }
     }
 
     public class PdfNull : PdfObject
