@@ -278,7 +278,8 @@ namespace PdfUtility
                             bb.Add((byte)mChar);
                             while (true)
                             {
-                                if (GetChar() < 0 || !char.IsLetterOrDigit((char)mChar))
+                                if (GetChar() < 0 || 
+                                    (IsDelimiter(mChar) || IsWhiteSpace(mChar)))
                                 {
                                     Back();
                                     var s = bb.ToArray();

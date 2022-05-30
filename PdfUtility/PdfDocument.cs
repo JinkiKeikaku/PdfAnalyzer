@@ -82,7 +82,6 @@ namespace PdfUtility
                 var obj = parser.ParseObject();
                 if (obj == null) break;
                 ret.Add(obj);
-//                Debug.WriteLine(obj);
                 if (obj is PdfIdentifier)
                 {
                     if (!func(ret, this)) break;
@@ -90,7 +89,6 @@ namespace PdfUtility
                 }
             }
         }
-
 
         public int GetPageSize() => RootPages?.GetInt("/Count") ?? 0;
 
@@ -120,7 +118,6 @@ namespace PdfUtility
                 }
             }
             return null;
-
         }
 
 
