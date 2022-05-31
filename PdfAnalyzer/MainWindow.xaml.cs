@@ -57,10 +57,9 @@ namespace PdfAnalyzer
             try
             {
                 Datas.Clear();
-                using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-                var doc = new PdfDocument();
-                doc.Open(stream);
-
+                
+                using var doc = new PdfDocument();
+                doc.Open(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read));
                 //Treeを作成。
                 Datas.Add(new TreeItem("File name", "", path));
                 Datas.Add(new TreeItem("Pdf Version", "", doc.PdfVerson));
@@ -77,6 +76,7 @@ namespace PdfAnalyzer
                 var xrefs = doc.GetXrefObjects();
                 var xrefItem = new PdfXrefListItem(new PdfXrefList(xrefs));
                 Datas.Add(PdfAnalyzeHelper.MakeNode(xrefItem));
+                doc.Close();
             }
             catch (Exception e)
             {

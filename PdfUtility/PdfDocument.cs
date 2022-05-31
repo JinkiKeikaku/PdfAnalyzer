@@ -10,7 +10,7 @@ namespace PdfUtility
     /// <summary>
     /// PDFのドキュメントクラス
     /// </summary>
-    public class PdfDocument
+    public class PdfDocument : IDisposable
     {
 
         public interface IListner
@@ -20,6 +20,7 @@ namespace PdfUtility
         }
         private PdfParser? mParser;
         private IListner? mListner;
+        private Stream? mStream;
 
         public PdfDocument(IListner? listner = null)
         {
@@ -43,6 +44,7 @@ namespace PdfUtility
 
         public void Open(Stream stream)
         {
+            mStream = stream;
             var ver = PdfParser.GetPdfVersion(stream) ?? throw new Exception("Not pdf file.");
             PdfVerson = ver;
             mParser = new();
@@ -68,6 +70,13 @@ namespace PdfUtility
         public void Close()
         {
             mParser = null;
+            mStream?.Close();
+            mStream = null;
+        }
+
+        public void Dispose()
+        {
+            Close();
         }
 
         public List<(int ObjectNumber, PdfObject Obj)> GetXrefObjects()
