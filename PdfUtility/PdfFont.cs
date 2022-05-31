@@ -14,6 +14,27 @@ namespace PdfUtility
         public PdfDictionary FontDict;
         public PdfRectangle FontBBox = new(0, 0, 1000, 1000);
         private Dictionary<int, Char> mCMap = new();
+        private Dictionary<int, string> mDifferences = new();
+
+        //FontDescriptionにCapHeighしかないこともある。
+        public double Ascent = 1000.0;
+        public double CapHeight = 733.0;
+        public double Descent = 0.0;
+
+        static Dictionary<string, string> mNameToSpecialChar = new()
+        {
+            {"/fl", "fl" },
+            {"/f_l", "fl" },
+            {"/fi", "fi" },
+            {"/f_i", "fi" },
+            {"/ff", "ff" },
+            {"/f_f", "ff" },
+            {"/ffi", "ffi" },
+            {"/ffl", "ffl" },
+            {"/ft", "ft" },
+            {"/st", "st" },
+            {"/emdash", "-"}
+        };
 
 
         public PdfFont(string name, PdfDictionary fontDict)
@@ -36,14 +57,7 @@ namespace PdfUtility
         public string ConvertString(byte[] bytes)
         {
             var typ = FontDict.GetValue<PdfName>("/Subtype");
-            if(typ?.Name == "/Type1")
-            {
-                var ms = new MemoryStream(bytes);
-                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-                using var sr = new StreamReader(ms, Encoding.ASCII);
-                return sr.ReadToEnd();
-            }
-
+            if (typ?.Name == "/Type1") return ConvertAnsiEncoding(bytes);
             var encoding = FontDict.GetValue<PdfName>("/Encoding");
             switch (encoding?.Name)
             {
@@ -55,12 +69,7 @@ namespace PdfUtility
                         return sr.ReadToEnd();
                     }
                 case "/WinAnsiEncoding":
-                    {
-                        var ms = new MemoryStream(bytes);
-                        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-                        using var sr = new StreamReader(ms, Encoding.ASCII);
-                        return sr.ReadToEnd();
-                    }
+                        return ConvertAnsiEncoding(bytes);
                 default:
                 case "/Identity-H":
                     {
@@ -74,6 +83,23 @@ namespace PdfUtility
                     }
 
             }
+        }
+
+        public string ConvertAnsiEncoding(byte[] bytes)
+        {
+            var sb = new StringBuilder();
+            foreach (var b in bytes)
+            {
+                if (mDifferences.ContainsKey(b))
+                {
+                    sb.Append(mNameToSpecialChar.GetValueOrDefault(mDifferences[b], "?"));
+                }
+                else
+                {
+                    sb.Append((char)b);
+                }
+            }
+            return sb.ToString();
         }
 
         public void InitMap(PdfParser parser)
@@ -90,10 +116,9 @@ namespace PdfUtility
                         var sr = new StreamReader(ms, Encoding.ASCII);
                         var s = sr.ReadToEnd();
 
-                        Debug.WriteLine(Name);
-                        Debug.WriteLine(s);
+                        //Debug.WriteLine(Name);
+                        //Debug.WriteLine(s);
                         ms = new MemoryStream(buf);
-
                         ParserCid(parser.Clone(ms));
                     }
                 }
@@ -103,9 +128,28 @@ namespace PdfUtility
                 var ed = parser.GetEntityObject(FontDict.GetValue("/Encoding")) as PdfDictionary;
                 if (ed != null)
                 {
-
-
-
+                    var diffArray = parser.GetEntityObject(ed.GetValue("/Differences")) as PdfArray;
+                    if(diffArray != null)
+                    {
+                        var code = 255;
+                        foreach(var a in diffArray)
+                        {
+                            if(a is PdfNumber num)
+                            {
+                                code = num.IntValue;
+                            }
+                            if (a is PdfName name)
+                            {
+                                mDifferences[code++] = name.Name;
+                            }
+                        }
+                        Debug.WriteLine("////////////// begin differences /////////////////");
+                        foreach (var a in diffArray)
+                        {
+                            Debug.WriteLine(a);
+                        }
+                        Debug.WriteLine("////////////// end differences /////////////////");
+                    }
                 }
             }
             var fontDescriptor = parser.GetEntityObject(FontDict.GetValue("/FontDescriptor")) as PdfDictionary;
@@ -119,11 +163,17 @@ namespace PdfUtility
                         fontDescriptor = parser.GetEntityObject(d.GetValue("/FontDescriptor")) as PdfDictionary;
                     }
                 }
-                if (fontDescriptor != null)
-                {
-                    var bb = GetFontBBox(parser, fontDescriptor);
-                    if (bb != null) FontBBox = bb;
-                }
+            }
+            if (fontDescriptor != null)
+            {
+                var bb = GetFontBBox(parser, fontDescriptor);
+                if (bb != null) FontBBox = bb;
+                var a = parser.GetEntityObject(fontDescriptor.GetValue("/Ascent")) as PdfNumber;
+                var h = parser.GetEntityObject(fontDescriptor.GetValue("/CapHeight")) as PdfNumber;
+                var d = parser.GetEntityObject(fontDescriptor.GetValue("/Descent")) as PdfNumber;
+                if (a != null) Ascent = a.DoubleValue;
+                if (h != null) CapHeight = h.DoubleValue;
+                if (d != null) Descent = d.DoubleValue;
             }
         }
 
@@ -150,7 +200,7 @@ namespace PdfUtility
                 var obj = parser.ParseObject();
                 if (obj == null) break;
                 stack.Add(obj);
-                Debug.WriteLine(obj);
+//                Debug.WriteLine(obj);
                 if (obj is PdfIdentifier id)
                 {
                     switch (id.Identifier)

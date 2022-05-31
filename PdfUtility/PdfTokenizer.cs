@@ -153,7 +153,7 @@ namespace PdfUtility
         public bool IsNextTokenStream()
         {
             var pos = StreamPosition;
-            if(GetChar() < 0)   return false;
+            if (GetChar() < 0) return false;
             Skip();
             StreamPosition--;
             var buf2 = new byte[mStreamAsciiChars.Length];
@@ -184,7 +184,7 @@ namespace PdfUtility
         public Token GetNextToken()
         {
             if (mTokenStack.Count > 0) return mTokenStack.Pop();
-//            var sb = new StringBuilder();
+            //            var sb = new StringBuilder();
             var bb = new List<byte>();
             while (true)
             {
@@ -193,31 +193,44 @@ namespace PdfUtility
                 {
                     case '(':
                         {
-                            var esc = false;
+                            //                            var esc = false;
                             var parCount = 1;
                             while (true)
                             {
                                 if (GetChar() < 0) throw new Exception("Unexpected eof");
-                                if (!esc)
+                                //if (!esc)
+                                //{
+                                if (mChar == ')')
                                 {
-                                    if (mChar == ')')
+                                    parCount--;
+                                    if (parCount == 0)
                                     {
-                                        parCount--;
-                                        if (parCount == 0)
-                                        {
-                                            CurrentToken = new Token(TokenKind.String, bb.ToArray());
-                                            return CurrentToken;
-                                        }
+                                        CurrentToken = new Token(TokenKind.String, bb.ToArray());
+                                        return CurrentToken;
                                     }
-                                    if (mChar == '(') parCount++;
-                                    if (mChar == '\\')
+                                }
+                                if (mChar == '(') parCount++;
+                                if (mChar == '\\')
+                                {
+                                    //エスケープシーケンス
+                                    if (GetChar() < 0) throw new Exception("Unexpected eof");
+                                    if (char.IsDigit((char)mChar))
                                     {
-                                        esc = true;
+                                        var sbNumber = new StringBuilder();
+                                        sbNumber.Append((char)mChar);
+                                        for (var i = 0; i < 2; i++)
+                                        {
+                                            if (GetChar() < 0) throw new Exception("Unexpected eof");
+                                            if (!char.IsDigit((char)mChar)) break;
+                                            sbNumber.Append((char)mChar);
+                                        }
+                                        if (sbNumber.Length != 3) Back();
+                                        var c = Convert.ToByte(sbNumber.ToString(), 8);
+                                        bb.Add((byte)c);
                                         continue;
                                     }
                                 }
                                 bb.Add((byte)mChar);
-                                esc = false;
                             }
                         }
                     case '<':
@@ -278,7 +291,7 @@ namespace PdfUtility
                             bb.Add((byte)mChar);
                             while (true)
                             {
-                                if (GetChar() < 0 || 
+                                if (GetChar() < 0 ||
                                     (IsDelimiter(mChar) || IsWhiteSpace(mChar)))
                                 {
                                     Back();

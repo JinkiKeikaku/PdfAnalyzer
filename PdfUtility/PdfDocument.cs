@@ -184,7 +184,6 @@ namespace PdfUtility
             var resources = GetEntityObject<PdfDictionary>(pageDic.GetValue("/Resources"));
             if (resources == null) throw new Exception("Page has no resource dictionary.");
             page.ResourcesDictionary = resources;
-//            page.Fonts = GetFonts(page.ResourcesDictionary);
 
             for (int i = 0; i < contentsArray.Count; i++)
             {
