@@ -229,6 +229,16 @@ namespace PdfUtility
                                         bb.Add((byte)c);
                                         continue;
                                     }
+                                    bb.Add((byte)((char)mChar switch
+                                    {
+                                        'n' => 10,
+                                        'r' => 13,
+                                        't' => 9,
+                                        'b' => 8,
+                                        'f' => 12,
+                                        _ => mChar
+                                    }));
+                                    continue;
                                 }
                                 bb.Add((byte)mChar);
                             }

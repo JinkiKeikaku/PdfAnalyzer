@@ -33,7 +33,39 @@ namespace PdfUtility
             {"/ffl", "ffl" },
             {"/ft", "ft" },
             {"/st", "st" },
-            {"/emdash", "-"}
+            {"/one", "1" },
+            {"/two", "2" },
+            {"/three", "3" },
+            {"/four", "4" },
+            {"/five", "5" },
+            {"/six", "6" },
+            {"/seven", "7" },
+            {"/eight", "8" },
+            {"/nine", "9" },
+            {"/zero", "0" },
+            {"/emdash", "-"},
+            {"/space", " " },
+            {"/period", "." },
+            {"/comma", "," },
+            {"/exclam", "!" },
+            {"/question", "?" },
+            {"/numbersign ", "#" },
+            {"/percent", "%" },
+            {"/ampersand", "&" },
+            {"/hyphen", "-" },
+            {"/quoteright", "”" },
+            {"/quoteleft", "“" },
+            {"/parenleft", "(" },
+            {"/parenright", ")" },
+            {"/equal", "=" },
+            {"/plus", "+" },
+            {"/dollar", "$" },
+            {"/collon", ":" },
+            {"/semicolon ", ";" },
+            {"/bullet", "∙" },
+            {"/less", "<" },
+            {"/greater", ">" },
+            {"/underscore", "_" },
         };
 
 
@@ -41,6 +73,14 @@ namespace PdfUtility
         {
             Name = name;
             FontDict = fontDict;
+            for(var i = 0; i < 26; i++)
+            {
+                var a = (char)((int)'a' + i);
+                mNameToSpecialChar[$"/{a}"] = a.ToString();
+                a = (char)((int)'A' + i);
+                mNameToSpecialChar[$"/{a}"] = a.ToString();
+            }
+
         }
 
         public override string ToString()
@@ -58,6 +98,7 @@ namespace PdfUtility
         {
             var typ = FontDict.GetValue<PdfName>("/Subtype");
             if (typ?.Name == "/Type1") return ConvertAnsiEncoding(bytes);
+            if (typ?.Name == "/TrueType") return ConvertAnsiEncoding(bytes);
             var encoding = FontDict.GetValue<PdfName>("/Encoding");
             switch (encoding?.Name)
             {
@@ -92,7 +133,9 @@ namespace PdfUtility
             {
                 if (mDifferences.ContainsKey(b))
                 {
-                    sb.Append(mNameToSpecialChar.GetValueOrDefault(mDifferences[b], "?"));
+                    var d = mDifferences[b];
+                    var c = mNameToSpecialChar.GetValueOrDefault(d, "?");
+                    sb.Append(c);
                 }
                 else
                 {

@@ -60,6 +60,11 @@ namespace PdfUtility
             RootPages = GetEntityObject<PdfDictionary>(Root.GetValue("/Pages"));
         }
 
+        public bool IsEncrypt()
+        {
+            return Trailer?.ContainsKey("/Encrypt") == true;
+        }  
+
         public void Close()
         {
             mParser = null;

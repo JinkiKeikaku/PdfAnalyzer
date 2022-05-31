@@ -64,6 +64,10 @@ namespace PdfAnalyzer
                 //Treeを作成。
                 Datas.Add(new TreeItem("File name", "", path));
                 Datas.Add(new TreeItem("Pdf Version", "", doc.PdfVerson));
+                if (doc.IsEncrypt())
+                {
+                    Datas.Add(new TreeItem("The stream is encrypted.", "", ""));
+                }
                 var traliler = PdfAnalyzeHelper.CreateItem(doc.Trailer!, "Trailer");
                 Datas.Add(PdfAnalyzeHelper.MakeNode(traliler));
                 var root = doc.Root;
