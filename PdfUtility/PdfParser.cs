@@ -63,6 +63,8 @@ namespace PdfUtility
 
         private PdfObject GetObjectFromXrefStream(byte[] bytes)
         {
+//            Debug.WriteLine($"GetObjectFromXrefStream ${bytes.Length}");
+
             using var mem = new MemoryStream(bytes);
             var tmp = mTokenizer;
             mTokenizer = new PdfTokenizer(mem);
@@ -117,18 +119,7 @@ namespace PdfUtility
                     }
                     return dic;
                 case TokenKind.StartArray:
-                    var a = new PdfArray();
-                    {
-                        while (true)
-                        {
-                            var ta2 = mTokenizer.GetNextToken();
-                            if (ta2.Kind == TokenKind.EndArray) return a;
-                            if (ta2.IsEof) throw new Exception("Unexpected eof in array.");
-                            mTokenizer.PushToken(ta2);
-                            var obj = ParseObject();
-                            a.Add(obj);
-                        }
-                    }
+                    return ParseArray();
                 case TokenKind.Number:
                     var t2 = mTokenizer.GetNextToken();
                     if (t2.Kind == TokenKind.Number)
@@ -376,7 +367,8 @@ namespace PdfUtility
                     int n = ps.Dictionary.GetInt("/N");
                     int first = ps.Dictionary.GetInt("/First");
                     //var bufPos = new (int, int)[n];
-                    //var tmp = Encoding.ASCII.GetString(eb);
+                    var tmp = Encoding.ASCII.GetString(eb);
+                    Debug.WriteLine(tmp);
                     var ss = Encoding.ASCII.GetString(eb[0..first]).Split();
                     for (var i0 = 0; i0 < n; i0++)
                     {
@@ -387,7 +379,6 @@ namespace PdfUtility
                             Xref2[index] = eb[px..];
                         }
                     }
-//                    Debug.WriteLine(tmp);
                 }
             }
             return stream.Dictionary;
@@ -414,10 +405,24 @@ namespace PdfUtility
             return d;
         }
 
-        static int c = 0;
+        PdfArray ParseArray()
+        {
+            PdfArray a = new PdfArray();
+            var t = mTokenizer.GetNextToken();
+            while (t.Kind != TokenKind.EndArray)
+            {
+                if (t.IsEof) throw new Exception("Unexpected eof in array.");
+                mTokenizer.PushToken(t);
+                var obj = ParseObject() ?? new PdfNull();
+                a.Add(obj);
+                t = mTokenizer.GetNextToken();
+            }
+            return a;
+        }
+
+
         PdfDictionary ParseDictionary()
         {
-            c++;
             PdfDictionary dict = new PdfDictionary();
             var t = mTokenizer.GetNextToken();
             while (t.Kind != TokenKind.EndDictionary)

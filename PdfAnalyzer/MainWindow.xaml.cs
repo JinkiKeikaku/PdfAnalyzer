@@ -26,12 +26,6 @@ namespace PdfAnalyzer
             }
             InitializeComponent();
             DataContext = this;
-            //var r = new TreeItem("root", "testtype", "info");
-            //Datas.Add(r);
-            //for (int i = 0; i < 6000; i++)
-            //{
-            //    r.Children.Add(new TreeItem(i.ToString(), "testtype", "info"));
-            //}
         }
 
         public ObservableCollection<TreeItem> Datas { get; } = new();

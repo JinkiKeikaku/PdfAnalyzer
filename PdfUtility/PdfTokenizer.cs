@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PdfUtility
 {
-    class PdfTokenizer
+    public class PdfTokenizer
     {
         public enum TokenKind
         {
@@ -112,7 +112,9 @@ namespace PdfUtility
 
         void Back()
         {
-            if (StreamPosition < StreamLength) StreamPosition--;
+//            if (StreamPosition < StreamLength) {
+                StreamPosition--;
+//            }
         }
 
         int GetChar()
