@@ -18,12 +18,12 @@ namespace PdfUtility
 
         public void Add(string key, PdfObject value)
         {
-            mDict.Add(key, value);
+            mDict[key] = value;
         }
 
         public void Add(PdfName key, PdfObject value)
         {
-            mDict.Add(key.Name, value);
+            mDict[key.Name]= value;
         }
 
         /// <inheritdoc/>

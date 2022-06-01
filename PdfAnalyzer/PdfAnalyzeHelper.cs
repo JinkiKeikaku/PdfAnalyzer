@@ -2,8 +2,10 @@
 using PdfUtility;
 using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Controls;
 
@@ -19,6 +21,7 @@ namespace PdfAnalyzer
             JpegImage,
             Binary,
             Text,
+            BinaryImage,
         }
 
         public static PdfObjectItem CreateItem(PdfObject obj, string name)
@@ -132,6 +135,22 @@ namespace PdfAnalyzer
                         File.WriteAllBytes(path, item.Parent.Data);
                         Process.Start("Explorer", path);
                         break;
+                    case OpenType.BinaryImage:
+                        {
+                            path += ".bmp";
+                            var bytes = item.Parent.GetExtractedBytes();
+                            if (bytes == null) return;
+                            var width = item.Parent.Dictionary.GetValue<PdfNumber>("/Width");
+                            var height = item.Parent.Dictionary.GetValue<PdfNumber>("/Height");
+                            if(width != null && height != null)
+                            {
+                                var bmp = CtreateImageFromRawArray(bytes, width.IntValue, height.IntValue);
+                                bmp.Save(path);
+//                                File.WriteAllBytes(path, item.Parent.Data);
+                                Process.Start("Explorer", path);
+                            }
+                        }
+                        break;
                 }
             }
             catch (Exception e)
@@ -189,6 +208,8 @@ namespace PdfAnalyzer
             if (treeView.SelectedItem is PdfStreamDataItem s)
             {
                 var filter = s.Parent.Dictionary.GetValue<PdfName>("/Filter");
+                var subType = s.Parent.Dictionary.GetValue<PdfName>("/Subtype");
+
                 switch (filter?.Name)
                 {
                     case "/FlateDecode":
@@ -207,6 +228,17 @@ namespace PdfAnalyzer
                                 OpenStreamData(s, OpenType.ExtractBinary);
                             };
                             menu.Items.Add(m2);
+                            if(subType == "/Image")
+                            {
+                                var m3 = new MenuItem();
+                                m3.Header = "Extract and open as image";
+                                m3.Click += (sender, e) =>
+                                {
+                                    OpenStreamData(s, OpenType.BinaryImage);
+                                };
+                                menu.Items.Add(m3);
+                            }
+
                         }
                         break;
                     case "/DCTDecode":
@@ -249,8 +281,22 @@ namespace PdfAnalyzer
             }
             return menu;
 //            if (menu.Items.Count > 0) menu.IsOpen = true;
-
-
         }
+
+            public static Bitmap CtreateImageFromRawArray(this byte[] arr, int width, int height)
+            {
+                var output = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                var rect = new Rectangle(0, 0, width, height);
+                var bmpData = output.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite, output.PixelFormat);
+                var arrRowLength = width * Bitmap.GetPixelFormatSize(output.PixelFormat) / 8;
+                var ptr = bmpData.Scan0;
+                for (var i = 0; i < height; i++)
+                {
+                    Marshal.Copy(arr, i * arrRowLength, ptr, arrRowLength);
+                    ptr += bmpData.Stride;
+                }
+                output.UnlockBits(bmpData);
+                return output;
+            }
     }
 }

@@ -12,36 +12,40 @@ namespace PdfUtility
     /// </summary>
     public class PdfDocument : IDisposable
     {
-
         public interface IListner
         {
             string OnRequestPassword();
             void OnPasswordError();
         }
-        private PdfParser? mParser;
-        private IListner? mListner;
-        private Stream? mStream;
-
         public PdfDocument(IListner? listner = null)
         {
             mListner = listner;
         }
 
-
+        /// <summary>
+        /// PDFのバージョンが入ります。
+        /// </summary>
         public string PdfVerson { get; private set; } = "";
+        /// <summary>
+        /// RootのPagesディクショナリを返します。
+        /// </summary>
         public PdfDictionary? RootPages { get; private set; }
+        /// <summary>
+        /// Rootディクショナリを返します。
+        /// </summary>
         public PdfDictionary? Root { get; private set; }
+        /// <summary>
+        /// Trailerディクショナリを返します。
+        /// </summary>
         public PdfDictionary? Trailer { get; private set; }
 
-        private PdfParser Parser
-        {
-            get
-            {
-                if (mParser == null) throw new Exception("parser is null. maybe document is not open.");
-                return mParser;
-            }
-        }
-
+        /// <summary>
+        /// ドキュメントを開きます。
+        /// </summary>
+        /// <param name="stream">PDFファイルのストリーム。渡されたストリームはPdfDocumentの
+        /// Close()で閉じられます。外部でストリームが閉じられると失敗します。
+        /// </param>
+        /// <exception cref="Exception"></exception>
         public void Open(Stream stream)
         {
             mStream = stream;
@@ -62,11 +66,17 @@ namespace PdfUtility
             RootPages = GetEntityObject<PdfDictionary>(Root.GetValue("/Pages"));
         }
 
+        /// <summary>
+        /// 暗号化されていればtrue
+        /// </summary>
         public bool IsEncrypt()
         {
             return Trailer?.ContainsKey("/Encrypt") == true;
         }  
 
+        /// <summary>
+        /// ドキュメントを閉じます。ストリームはここで閉じられます。
+        /// </summary>
         public void Close()
         {
             mParser = null;
@@ -79,16 +89,25 @@ namespace PdfUtility
             Close();
         }
 
+        /// <summary>
+        /// Xrefテーブルから見つかったオブジェクトのリストを返します。
+        /// </summary>
+        /// <returns></returns>
         public List<(int ObjectNumber, PdfObject Obj)> GetXrefObjects()
         {
             return Parser.GetXReferenceObjects();
         }
 
-        public void ParserGraphics(byte[] script, Func<List<PdfObject>, PdfDocument, bool> func)
+        /// <summary>
+        /// グラフィックス命令を１つづつ列挙します。
+        /// </summary>
+        /// <param name="contents">コンテンツ</param>
+        /// <param name="func">列挙された命令を処理する関数</param>
+        /// <exception cref="Exception"></exception>
+        public void ParserGraphics(byte[] contents, Func<List<PdfObject>, PdfDocument, bool> func)
         {
             var ret = new List<PdfObject>();
-
-            using var ms = new MemoryStream(script);// Encoding.ASCII.GetBytes(script));
+            using var ms = new MemoryStream(contents);
             var parser = mParser?.Clone(ms);
             if (parser == null) throw new Exception("Cannot create graohics parser.");
             while (true)
@@ -104,9 +123,122 @@ namespace PdfUtility
             }
         }
 
+        /// <summary>
+        /// 総ページ数を返す
+        /// </summary>
+        /// <returns></returns>
         public int GetPageSize() => RootPages?.GetInt("/Count") ?? 0;
 
-        public PdfDictionary? GetPageDictionary(PdfDictionary pages, int pageNumber, int topPage)
+        /// <summary>
+        /// インデックスで指定されるページオブジェクトを返します。
+        /// インデックスは0から始まり1ページ目が0です。
+        /// </summary>
+        /// <param name="pageIndex"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public PdfPage GetPage(int pageIndex)
+        {
+            if (RootPages == null) throw new Exception("Root pages is null. maybe document is not open.");
+            var pageDic = GetPageDictionary(RootPages, pageIndex, 0);
+            if (pageDic == null) throw new Exception($"cannot find page {pageIndex}");
+            var contents = GetEntityObject(pageDic.GetValue("/Contents"));
+            PdfArray contentsArray = new();
+            if (contents is PdfStream pdfStream)
+            {
+                contentsArray.Add(pdfStream);
+            }
+            if (contents is PdfArray pdfArray)
+            {
+                contentsArray = pdfArray;
+            }
+            var page = new PdfPage();
+            page.Attribute = GetPageAttribute(pageDic);
+            var resources = GetEntityObject<PdfDictionary>(pageDic.GetValue("/Resources"));
+            if (resources == null) throw new Exception("Page has no resource dictionary.");
+            page.ResourcesDictionary = resources;
+
+            for (int i = 0; i < contentsArray.Count; i++)
+            {
+                var contentsStream = GetEntityObject<PdfStream>(contentsArray.GetAt<PdfObject>(i));
+                if (contentsStream != null)
+                {
+                    var bytes = contentsStream.GetExtractedBytes();
+                    if (bytes != null)
+                    {
+                        page.ContentsList.Add(bytes);
+                    }
+                }
+            }
+            return page;
+        }
+
+        /// <summary>
+        /// /Pageを取得します。
+        /// </summary>
+        /// <param name="pages"></param>
+        /// <param name="pageIndex">0から始まるページのインデックス。１ページ目が0になる。</param>
+        /// <returns>ページのディクショナリを返す。無ければnull。</returns>
+        /// <exception cref="Exception"></exception>
+        public PdfDictionary? GetPageDictionary(PdfDictionary pages, int pageIndex)
+        {
+            return GetPageDictionary(pages, pageIndex, 0);
+        }
+
+        /// <summary>
+        /// オブジェクトを渡すとリファレンスの場合、そのリファレンスをたどり最終的に指し示すオブジェクトを
+        /// 返します。渡されたオブジェクトがリファレンスでない場合は渡されたオブジェクトが返ります。
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public PdfObject? GetEntityObject(PdfObject? obj) {
+            return Parser.GetEntityObject(obj);
+        }
+
+        /// <summary>
+        /// オブジェクトを渡すとリファレンスの場合、そのリファレンスをたどり最終的に指し示すオブジェクトを
+        /// 返します。渡されたオブジェクトがリファレンスでない場合は渡されたオブジェクトが返ります。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public T? GetEntityObject<T>(PdfObject? obj) where T : PdfObject => GetEntityObject(obj) as T;
+
+
+
+        /// <summary>
+        /// リソースディクショナリからフォントのリストを作成します。
+        /// </summary>
+        /// <param name="resource"></param>
+        /// <returns></returns>
+        public List<PdfFont> GetFonts(PdfDictionary resource)
+        {
+            var fonts = new List<PdfFont>();
+            var fontDic = GetEntityObject<PdfDictionary>(resource.GetValue("/Font"));
+            if (fontDic == null) return fonts;
+            int n = fontDic.Count;
+            for (var i = 0; i < n; i++)
+            {
+                var p = fontDic.GetAt(i);
+                var name = p.Key;
+                var dic = GetEntityObject<PdfDictionary>(p.Value);
+                if (dic != null)
+                {
+                    var f = new PdfFont(name, dic);
+                    f.InitMap(mParser!);
+                    fonts.Add(f);
+                }
+            }
+            return fonts;
+        }
+
+        public PdfStream? GetXObjectStream(PdfDictionary resource, string name)
+        {
+            var xobjectDic = GetEntityObject<PdfDictionary>(resource.GetValue("/XObject"));
+            return GetEntityObject<PdfStream>(xobjectDic?.GetValue(name));
+        }
+
+
+        PdfDictionary? GetPageDictionary(PdfDictionary pages, int pageIndex, int topPage)
         {
             var c = topPage;
             var kids = pages.GetValue<PdfArray>("/Kids");
@@ -118,14 +250,14 @@ namespace PdfUtility
                 switch (pd.GetValue<PdfName>("/Type")?.Name)
                 {
                     case "/Page":
-                        if (c == pageNumber) return pd;
+                        if (c == pageIndex) return pd;
                         c++;
                         break;
                     case "/Pages":
                         var dc = pd.GetInt("/Count");
-                        if (pageNumber < dc + c)
+                        if (pageIndex < dc + c)
                         {
-                            return GetPageDictionary(pd, pageNumber, c);
+                            return GetPageDictionary(pd, pageIndex, c);
                         }
                         c += dc;
                         break;
@@ -133,14 +265,6 @@ namespace PdfUtility
             }
             return null;
         }
-
-
-        public PdfObject? GetEntityObject(PdfObject? obj) {
-            return Parser.GetEntityObject(obj);
-        }
-
-        public T? GetEntityObject<T>(PdfObject? obj) where T : PdfObject => GetEntityObject(obj) as T;
-
 
         PdfRectangle? GetRectFromPage(PdfDictionary pdfDic, string name, bool inheritable)
         {
@@ -178,74 +302,23 @@ namespace PdfUtility
             return pdfPageAttribute;
         }
 
-        public PdfPage GetPage(int pageNumber)
-        {
-            if (RootPages == null) throw new Exception("Root pages is null. maybe document is not open.");
-            var pageDic = GetPageDictionary(RootPages, pageNumber, 0);
-            if (pageDic == null) throw new Exception($"cannot find page {pageNumber}");
-            var contents = GetEntityObject(pageDic.GetValue("/Contents"));
-            PdfArray contentsArray = new();
-            if (contents is PdfStream pdfStream)
-            {
-                contentsArray.Add(pdfStream);
-            }
-            if (contents is PdfArray pdfArray)
-            {
-                contentsArray = pdfArray;
-            }
-            var page = new PdfPage();
-            page.Attribute = GetPageAttribute(pageDic);
-            var resources = GetEntityObject<PdfDictionary>(pageDic.GetValue("/Resources"));
-            if (resources == null) throw new Exception("Page has no resource dictionary.");
-            page.ResourcesDictionary = resources;
-
-            for (int i = 0; i < contentsArray.Count; i++)
-            {
-                var contentsStream = GetEntityObject<PdfStream>(contentsArray.GetAt<PdfObject>(i));
-                if (contentsStream != null)
-                {
-                    var bytes = contentsStream.GetExtractedBytes();
-                    if (bytes != null)
-                    {
-                        page.ContentsList.Add(bytes);
-                    }
-                }
-            }
-            return page;
-        }
-
-        public List<PdfFont> GetFonts(PdfDictionary resource)
-        {
-            var fonts = new List<PdfFont>();
-            var fontDic = GetEntityObject<PdfDictionary>(resource.GetValue("/Font"));
-            if (fontDic == null) return fonts;
-            int n = fontDic.Count;
-            for (var i = 0; i < n; i++)
-            {
-                var p = fontDic.GetAt(i);
-                var name = p.Key;
-                var dic = GetEntityObject<PdfDictionary>(p.Value);
-                if (dic != null)
-                {
-                    var f = new PdfFont(name, dic);
-                    f.InitMap(mParser!);
-                    fonts.Add(f);
-                }
-            }
-            return fonts;
-        }
-
-        public PdfStream? GetXObject(PdfDictionary resource, string name)
-        {
-            var xobjectDic = GetEntityObject<PdfDictionary>(resource.GetValue("/XObject"));
-            return GetEntityObject<PdfStream>(xobjectDic?.GetValue(name));
-        }
-
         private PdfDictionary GetRootObject()
         {
             var obj = Trailer?.GetValue<PdfReference>("/Root");
             if (obj == null) throw new Exception("cannot find /Root");
             return GetEntityObject<PdfDictionary>(obj) ?? throw new Exception("cannot parse root object");
         }
+
+        private PdfParser Parser
+        {
+            get
+            {
+                if (mParser == null) throw new Exception("parser is null. maybe document is not open.");
+                return mParser;
+            }
+        }
+        private PdfParser? mParser;
+        private IListner? mListner;
+        private Stream? mStream;
     }
 }
