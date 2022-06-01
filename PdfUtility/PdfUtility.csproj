@@ -5,9 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Authors>Junkbulk</Authors>
-    <Company>JinkiKeikaku</Company>
+    <Company>Jinki-Keikaku</Company>
     <Copyright>Copyright © 2022 JinkiKeikaku</Copyright>
 
   </PropertyGroup>
