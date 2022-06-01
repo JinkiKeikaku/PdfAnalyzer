@@ -37,6 +37,7 @@ namespace PdfAnalyzer
             Properties.Settings.Default.TextEditorPath = TextEditorPath;
             Properties.Settings.Default.BinaryEditorPath = BinaryEditorPath;
             Properties.Settings.Default.ImageViewerPath = ImageViewerPath;
+            Properties.Settings.Default.Save();
             Close();
         }
 

@@ -367,8 +367,8 @@ namespace PdfUtility
                     int n = ps.Dictionary.GetInt("/N");
                     int first = ps.Dictionary.GetInt("/First");
                     //var bufPos = new (int, int)[n];
-                    var tmp = Encoding.ASCII.GetString(eb);
-                    Debug.WriteLine(tmp);
+                    //var tmp = Encoding.ASCII.GetString(eb);
+                    //Debug.WriteLine(tmp);
                     var ss = Encoding.ASCII.GetString(eb[0..first]).Split();
                     for (var i0 = 0; i0 < n; i0++)
                     {

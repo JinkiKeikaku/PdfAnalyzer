@@ -228,16 +228,24 @@ namespace PdfAnalyzer
                                 OpenStreamData(s, OpenType.ExtractBinary);
                             };
                             menu.Items.Add(m2);
-                            if(subType == "/Image")
+                            var m3 = new MenuItem();
+                            m3.Header = "Open as binary";
+                            m3.Click += (sender, e) =>
                             {
-                                var m3 = new MenuItem();
-                                m3.Header = "Extract and open as image";
-                                m3.Click += (sender, e) =>
+                                OpenStreamData(s, OpenType.Binary);
+                            };
+                            menu.Items.Add(m3);
+                            if (subType == "/Image")
+                            {
+                                var m4 = new MenuItem();
+                                m4.Header = "Extract and open as image";
+                                m4.Click += (sender, e) =>
                                 {
                                     OpenStreamData(s, OpenType.BinaryImage);
                                 };
-                                menu.Items.Add(m3);
+                                menu.Items.Add(m4);
                             }
+
 
                         }
                         break;

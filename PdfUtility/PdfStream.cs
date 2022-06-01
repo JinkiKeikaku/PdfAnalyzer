@@ -23,11 +23,12 @@ namespace PdfUtility
         {
             var filter = Dictionary.GetValue("/Filter");
             if (filter == null) return Data;
-            if(filter is not PdfArray fs) {
+            if (filter is not PdfArray fs)
+            {
                 fs = new PdfArray();
                 fs.Add(filter);
             }
-            foreach(var f in fs)
+            foreach (var f in fs)
             {
                 if (f is PdfName ff)
                 {
@@ -40,41 +41,19 @@ namespace PdfUtility
                             var m = new MemoryStream();
                             z.CopyTo(m);
                             var decodeParms = Dictionary.GetValue<PdfDictionary>("/DecodeParms");
-                            var pred = decodeParms?.GetValue<PdfNumber>("/Predictor");
-                            if (pred == null || pred.IntValue == 1) return m.ToArray();
-                            var predcNo = pred.IntValue;
+                            var predcNo = decodeParms?.GetValue<PdfNumber>("/Predictor")?.IntValue ?? 1;
+                            if (predcNo == 1) return m.ToArray();
                             if (predcNo >= 10)
                             {
-                                var columns = decodeParms?.GetValue<PdfNumber>("/Columns");
-                                if (columns == null) throw new Exception("/FlateDecode PNG predictor no columns.");
-                                var c = columns.IntValue;
-                                var buf = m.ToArray();
-                                var n = buf.Length / (c + 1);
-                                var ret = new byte[n * c];
-                                Array.Copy(buf, 1, ret, 0, c);
-                                var k1 = 0;
-                                var k2 = c;
-                                var k3 = c+1;
-                                for (var j = 1; j < n; j++) {
-                                    if (buf[k3] == 2)
-                                    {
-                                        k3++;
-                                        for (var i = 0; i < c; i++)
-                                        {
-                                            ret[k2] = (byte)(ret[k1] + buf[k3]);
-                                            k1++;
-                                            k2++;
-                                            k3++;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        throw new Exception("/FlateDecode PNG predictor only png predictor 2.");
-                                    }
-                                }
-                                return ret;
+                                var colorsVal = decodeParms?.GetValue<PdfNumber>("/Colors");
+                                var colors = colorsVal?.IntValue ?? 1;
+                                var columnsVal = decodeParms?.GetValue<PdfNumber>("/Columns");
+                                if (columnsVal == null) throw new Exception("/FlateDecode PNG predictor no columns.");
+                                var numColumn = columnsVal.IntValue * colors;
+                                var src = m.ToArray();
+                                return PngPredictor.Predict(src, numColumn, colors);
                             }
-                            Debug.WriteLine("PdfStream extracted /FlateDecode predictor < 10 not support");
+                            Debug.WriteLine("PdfStream extracted /FlateDecode predictor != 12 not support");
                             return m.ToArray();
                         default:
                             return null;
@@ -83,6 +62,7 @@ namespace PdfUtility
             }
             return null;
         }
+
 
         public override string ToString()
         {
