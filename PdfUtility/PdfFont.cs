@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,6 +16,7 @@ namespace PdfUtility
         public PdfRectangle FontBBox = new(0, 0, 1000, 1000);
         private Dictionary<int, Char> mCMap = new();
         private Dictionary<int, string> mDifferences = new();
+
 
         //FontDescriptionにCapHeighしかないこともある。
         public double Ascent = 1000.0;
@@ -73,14 +75,13 @@ namespace PdfUtility
         {
             Name = name;
             FontDict = fontDict;
-            for(var i = 0; i < 26; i++)
+            for (var i = 0; i < 26; i++)
             {
                 var a = (char)((int)'a' + i);
                 mNameToSpecialChar[$"/{a}"] = a.ToString();
                 a = (char)((int)'A' + i);
                 mNameToSpecialChar[$"/{a}"] = a.ToString();
             }
-
         }
 
         public override string ToString()
@@ -110,7 +111,7 @@ namespace PdfUtility
                         return sr.ReadToEnd();
                     }
                 case "/WinAnsiEncoding":
-                        return ConvertAnsiEncoding(bytes);
+                    return ConvertAnsiEncoding(bytes);
                 default:
                 case "/Identity-H":
                     {
@@ -168,55 +169,97 @@ namespace PdfUtility
             }
             else if (FontDict.ContainsKey("/Encoding"))
             {
-                var ed = parser.GetEntityObject(FontDict.GetValue("/Encoding")) as PdfDictionary;
-                if (ed != null)
+                var encodingObject = parser.GetEntityObject(FontDict.GetValue("/Encoding"));
+                switch (encodingObject)
                 {
-                    var diffArray = parser.GetEntityObject(ed.GetValue("/Differences")) as PdfArray;
-                    if(diffArray != null)
-                    {
-                        var code = 255;
-                        foreach(var a in diffArray)
+                    case PdfDictionary ed:
                         {
-                            if(a is PdfNumber num)
+                            var diffArray = parser.GetEntityObject(ed.GetValue("/Differences")) as PdfArray;
+                            if (diffArray != null)
                             {
-                                code = num.IntValue;
-                            }
-                            if (a is PdfName name)
-                            {
-                                mDifferences[code++] = name.Name;
+                                var code = 255;
+                                foreach (var a in diffArray)
+                                {
+                                    if (a is PdfNumber num)
+                                    {
+                                        code = num.IntValue;
+                                    }
+                                    if (a is PdfName name)
+                                    {
+                                        mDifferences[code++] = name.Name;
+                                    }
+                                }
                             }
                         }
-                        Debug.WriteLine("////////////// begin differences /////////////////");
-                        foreach (var a in diffArray)
+                        break;
+                    case PdfName name:
                         {
-                            Debug.WriteLine(a);
+                            if (name == "/Identity-H")
+                            {
+                                var dd = parser.GetEntityObject(FontDict.GetValue("/DescendantFonts")) as PdfArray;
+                                if (dd != null && dd.Count > 0)
+                                {
+                                    if (parser.GetEntityObject(dd[0]) is PdfDictionary d)
+                                    {
+                                        var cidSystemInfo = parser.GetEntityObject(d.GetValue("/CIDSystemInfo")) as PdfDictionary;
+                                        if (cidSystemInfo != null)
+                                        {
+                                            var registry = cidSystemInfo.GetString("/Registry").ToString();
+                                            var ordering = cidSystemInfo.GetString("/Ordering").ToString();
+                                            MakeCIDFontCMap(parser, registry, ordering);
+                                        }
+                                    }
+                                }
+                            }
+                            break;
                         }
-                        Debug.WriteLine("////////////// end differences /////////////////");
-                    }
                 }
-            }
-            var fontDescriptor = parser.GetEntityObject(FontDict.GetValue("/FontDescriptor")) as PdfDictionary;
-            if (fontDescriptor == null)
-            {
-                var dd = parser.GetEntityObject(FontDict.GetValue("/DescendantFonts")) as PdfArray;
-                if (dd != null && dd.Count > 0)
+                var fontDescriptor = parser.GetEntityObject(FontDict.GetValue("/FontDescriptor")) as PdfDictionary;
+                if (fontDescriptor == null)
                 {
-                    if (parser.GetEntityObject(dd[0]) is PdfDictionary d)
+                    var dd = parser.GetEntityObject(FontDict.GetValue("/DescendantFonts")) as PdfArray;
+                    if (dd != null && dd.Count > 0)
                     {
-                        fontDescriptor = parser.GetEntityObject(d.GetValue("/FontDescriptor")) as PdfDictionary;
+                        if (parser.GetEntityObject(dd[0]) is PdfDictionary d)
+                        {
+                            fontDescriptor = parser.GetEntityObject(d.GetValue("/FontDescriptor")) as PdfDictionary;
+                        }
                     }
                 }
+                if (fontDescriptor != null)
+                {
+                    var bb = GetFontBBox(parser, fontDescriptor);
+                    if (bb != null) FontBBox = bb;
+                    var a = parser.GetEntityObject(fontDescriptor.GetValue("/Ascent")) as PdfNumber;
+                    var h = parser.GetEntityObject(fontDescriptor.GetValue("/CapHeight")) as PdfNumber;
+                    var d = parser.GetEntityObject(fontDescriptor.GetValue("/Descent")) as PdfNumber;
+                    if (a != null) Ascent = a.DoubleValue;
+                    if (h != null) CapHeight = h.DoubleValue;
+                    if (d != null) Descent = d.DoubleValue;
+                }
             }
-            if (fontDescriptor != null)
+
+            void MakeCIDFontCMap(PdfParser parser, string registry, string ordering)
             {
-                var bb = GetFontBBox(parser, fontDescriptor);
-                if (bb != null) FontBBox = bb;
-                var a = parser.GetEntityObject(fontDescriptor.GetValue("/Ascent")) as PdfNumber;
-                var h = parser.GetEntityObject(fontDescriptor.GetValue("/CapHeight")) as PdfNumber;
-                var d = parser.GetEntityObject(fontDescriptor.GetValue("/Descent")) as PdfNumber;
-                if (a != null) Ascent = a.DoubleValue;
-                if (h != null) CapHeight = h.DoubleValue;
-                if (d != null) Descent = d.DoubleValue;
+                if (registry != "Adobe")
+                {
+                    Debug.WriteLine("CIDFont:Registry is supported only Adobe");
+                    return;
+                }
+                switch (ordering)
+                {
+                    case "Japan1":
+                        {
+                            using var mem = new MemoryStream(Properties.Resources.UniJIS2004_UTF16_H);
+                            var p = parser.Clone(mem);
+                            ParserCid(p);
+                        }
+                        break;
+                    default:
+                        Debug.WriteLine($"CIDFont:Ordering name is not supported :: {ordering} ");
+                        return;
+                }
+
             }
         }
 
@@ -231,19 +274,21 @@ namespace PdfUtility
             None,
             BfChar,
             BfRange,
+            CidChar,
+            CidRange,
         };
 
         private void ParserCid(PdfParser parser)
         {
             CidState state;
 
-            var stack = new List<object>();
+            var stack = new List<PdfObject>();
             while (true)
             {
                 var obj = parser.ParseObject();
                 if (obj == null) break;
                 stack.Add(obj);
-//                Debug.WriteLine(obj);
+                //                Debug.WriteLine(obj);
                 if (obj is PdfIdentifier id)
                 {
                     switch (id.Identifier)
@@ -255,17 +300,12 @@ namespace PdfUtility
                         case "endbfrange":
                             for (var i = 0; i < stack.Count - 1; i += 3)
                             {
-                                var srcCode0 = (stack[i] as PdfHexString)!.ConvertToInt();
-                                var srcCode1 = (stack[i + 1] as PdfHexString)!.ConvertToInt();
-                                var dst = stack[i + 2];
-                                if (dst is PdfHexString dh)
+                                var srcCode0 = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
+                                var srcCode1 = GetIntFromCode(stack[i + 1]);// as PdfHexString)!.ConvertToInt();
+                                var dstCode = GetIntFromCode(stack[i + 2]);//.ConvertToInt();
+                                for (var sc = srcCode0; sc <= srcCode1; sc++)
                                 {
-                                    var dstCode = dh.ConvertToInt();
-                                    for (var sc = srcCode0; sc <= srcCode1; sc++)
-                                    {
-                                        mCMap.Add(sc, (Char)dstCode++);
-                                    }
-
+                                    mCMap.Add(sc, (Char)dstCode++);
                                 }
                             }
                             state = CidState.None;
@@ -280,20 +320,55 @@ namespace PdfUtility
                         case "endbfchar":
                             for (var i = 0; i < stack.Count - 1; i += 2)
                             {
-                                var srcCode = (stack[i] as PdfHexString)!.ConvertToInt();
-                                var dst = stack[i + 1];
-                                if (dst is PdfHexString dh)
+                                var srcCode = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
+                                var dstCode = GetIntFromCode(stack[i + 1]);// dh.ConvertToInt();
+                                mCMap.Add(srcCode, (Char)dstCode);
+                            }
+                            state = CidState.None;
+                            stack.Clear();
+                            break;
+                        case "begincidchar":
+                            state = CidState.CidChar;
+                            stack.Clear();
+                            break;
+                        case "endcidchar":
+                            for (var i = 0; i < stack.Count - 1; i += 2)
+                            {
+                                var dstCode = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
+                                var srcCode = GetIntFromCode(stack[i + 1]);// dh.ConvertToInt();
+                                mCMap[srcCode] = (Char)dstCode;
+                            }
+                            state = CidState.None;
+                            stack.Clear();
+                            break;
+                        case "begincidrange":
+                            state = CidState.CidRange;
+                            stack.Clear();
+                            break;
+                        case "endcidrange":
+                            for (var i = 0; i < stack.Count - 1; i += 3)
+                            {
+                                var dstCode0 = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
+                                var dstCode1 = GetIntFromCode(stack[i + 1]);// as PdfHexString)!.ConvertToInt();
+                                var srcCode = GetIntFromCode(stack[i + 2]);// dh.ConvertToInt();
+                                for (var dst = dstCode0; dst <= dstCode1; dst++)
                                 {
-                                    var dstCode = dh.ConvertToInt();
-                                    mCMap.Add(srcCode, (Char)dstCode);
+                                    mCMap[srcCode++] = (Char)dst;
                                 }
                             }
                             state = CidState.None;
                             stack.Clear();
                             break;
+
                     }
                 }
             }
+        }
+        private int GetIntFromCode(PdfObject obj)
+        {
+            if (obj is PdfHexString dh) return dh.ConvertToInt();
+            if (obj is PdfNumber num) return num.IntValue;
+            throw new Exception("GetIntFromCode() cannot parse to int.");
         }
     }
 }

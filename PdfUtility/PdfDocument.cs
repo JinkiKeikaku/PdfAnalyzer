@@ -20,6 +20,7 @@ namespace PdfUtility
         public PdfDocument(IListner? listner = null)
         {
             mListner = listner;
+//            PdfFont.GetCIDFontCMap();
         }
 
         /// <summary>

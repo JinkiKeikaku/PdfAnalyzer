@@ -112,6 +112,7 @@ namespace PdfUtility
 
         void Back()
         {
+
 //            if (StreamPosition < StreamLength) {
                 StreamPosition--;
 //            }
@@ -283,8 +284,7 @@ namespace PdfUtility
                             {
 
                                 var aa = Encoding.ASCII.GetString(bb.ToArray())!;
-
-                                Back();
+                                if(!CurrentToken.IsEof) Back();
                                 CurrentToken = new Token(TokenKind.Name, bb.ToArray());
                                 bb.Clear();
                                 return CurrentToken;
@@ -306,7 +306,8 @@ namespace PdfUtility
                                 if (GetChar() < 0 ||
                                     (IsDelimiter(mChar) || IsWhiteSpace(mChar)))
                                 {
-                                    Back();
+
+                                    if (!CurrentToken.IsEof) Back();
                                     var s = bb.ToArray();
                                     bb.Clear();
                                     CurrentToken = new Token(TokenKind.Identifier, s);
@@ -328,7 +329,7 @@ namespace PdfUtility
                             {
                                 if (GetChar() < 0 || !IsNumber(mChar)) // (!char.IsDigit((char)mChar) && mChar != '.'))
                                 {
-                                    Back();
+                                    if (!CurrentToken.IsEof) Back();
                                     CurrentToken = new Token(TokenKind.Number, bb.ToArray());
                                     bb.Clear();
                                     return CurrentToken;

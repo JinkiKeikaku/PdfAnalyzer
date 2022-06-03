@@ -8,6 +8,8 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace PdfAnalyzer
 {
@@ -39,7 +41,7 @@ namespace PdfAnalyzer
                 _ => new PdfObjectItem(obj, name, "", obj?.ToString() ?? ""),
             };
         }
-        public static  PdfObjectItem MakeNode(PdfObjectItem item)
+        public static PdfObjectItem MakeNode(PdfObjectItem item)
         {
             switch (item.PdfObject)
             {
@@ -142,11 +144,18 @@ namespace PdfAnalyzer
                             if (bytes == null) return;
                             var width = item.Parent.Dictionary.GetValue<PdfNumber>("/Width");
                             var height = item.Parent.Dictionary.GetValue<PdfNumber>("/Height");
-                            if(width != null && height != null)
+                            var colorSpace = item.Parent.Dictionary.GetValue<PdfName>("/ColorSpace");
+                            if (width != null && height != null)
                             {
-                                var bmp = CtreateImageFromRawArray(bytes, width.IntValue, height.IntValue);
+                                var cs = colorSpace?.Name switch
+                                {
+                                    "/DeviceRGB" => ImageType.RGB,
+                                    "/DeviceCMYK" => ImageType.CMYK,
+                                    "/DeviceGray" => ImageType.Gray,
+                                    _=> throw new NotImplementedException($"Not supported image {colorSpace?.Name}")
+                                };
+                                var bmp = CtreateImageFromRaw(bytes, width.IntValue, height.IntValue, cs);
                                 bmp.Save(path);
-//                                File.WriteAllBytes(path, item.Parent.Data);
                                 Process.Start("Explorer", path);
                             }
                         }
@@ -245,8 +254,6 @@ namespace PdfAnalyzer
                                 };
                                 menu.Items.Add(m4);
                             }
-
-
                         }
                         break;
                     case "/DCTDecode":
@@ -288,23 +295,139 @@ namespace PdfAnalyzer
                 }
             }
             return menu;
-//            if (menu.Items.Count > 0) menu.IsOpen = true;
+            //            if (menu.Items.Count > 0) menu.IsOpen = true;
         }
 
-            public static Bitmap CtreateImageFromRawArray(this byte[] arr, int width, int height)
+        public enum ImageType
+        {
+            BGR,    //Windows
+            RGB,    //PNG
+            CMYK,    //CMYK
+            Gray,   //8bit
+        }
+
+        public static Bitmap CtreateImageFromRaw(byte[] src, int width, int height, ImageType imageType)
+        {
+            switch (imageType)
             {
-                var output = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                var rect = new Rectangle(0, 0, width, height);
-                var bmpData = output.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite, output.PixelFormat);
-                var arrRowLength = width * Bitmap.GetPixelFormatSize(output.PixelFormat) / 8;
-                var ptr = bmpData.Scan0;
-                for (var i = 0; i < height; i++)
-                {
-                    Marshal.Copy(arr, i * arrRowLength, ptr, arrRowLength);
-                    ptr += bmpData.Stride;
-                }
-                output.UnlockBits(bmpData);
-                return output;
+                case ImageType.BGR:
+                    return CtreateImageFromBGR(src, width, height);
+                case ImageType.RGB:
+                    return CtreateImageFromRGB(src, width, height);
+                case ImageType.CMYK:
+                    return CtreateImageFromCMYK(src, width, height);
+                case ImageType.Gray:
+                    return CtreateImageFromGray(src, width, height);
             }
+            throw new Exception($"CtreateImageFromRaw Unknown image type {imageType}");
+        }
+
+        private static Bitmap CtreateImageFromRGB(byte[] src, int width, int height) {
+            var bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            var rect = new Rectangle(0, 0, width, height);
+            var bmpData = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite, bmp.PixelFormat);
+            var arrRowLength = bmpData.Stride;
+            var ptr = bmpData.Scan0;
+            var buf = new byte[arrRowLength];
+            var w3 = width * 3;
+            for (var y = 0; y < height; y++)
+            {
+                var srcTop = y * w3;
+                for (var x = 0; x < w3; x += 3)
+                {
+                    buf[x] = src[srcTop + x + 2];
+                    buf[x + 1] = src[srcTop + x + 1];
+                    buf[x + 2] = src[srcTop + x];
+                }
+                Marshal.Copy(buf, 0, ptr, arrRowLength);
+                ptr += arrRowLength;
+            }
+            bmp.UnlockBits(bmpData);
+            return bmp;
+        }
+        private static Bitmap CtreateImageFromBGR(byte[] src, int width, int height)
+        {
+            var bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            var rect = new Rectangle(0, 0, width, height);
+            var bmpData = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite, bmp.PixelFormat);
+            var arrRowLength = bmpData.Stride;
+            var ptr = bmpData.Scan0;
+            var buf = new byte[arrRowLength];
+            var w3 = width * 3;
+            for (var y = 0; y < height; y++)
+            {
+                var srcTop = y * w3;
+                for (var x = 0; x < w3; x += 3)
+                {
+                    buf[x] = src[srcTop + x];
+                    buf[x + 1] = src[srcTop + x + 1];
+                    buf[x + 2] = src[srcTop + x + 2];
+                }
+                Marshal.Copy(buf, 0, ptr, arrRowLength);
+                ptr += arrRowLength;
+            }
+            bmp.UnlockBits(bmpData);
+            return bmp;
+        }
+
+        private static Bitmap CtreateImageFromCMYK(byte[] src, int width, int height)
+        {
+            var bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            var rect = new Rectangle(0, 0, width, height);
+            var bmpData = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite, bmp.PixelFormat);
+            var arrRowLength = bmpData.Stride;
+            var ptr = bmpData.Scan0;
+            var buf = new byte[arrRowLength];
+            for (var y = 0; y < height; y++)
+            {
+                var x3 = 0;
+                var x4 = 0;
+                var srcTop = y * width*4;
+                for (var x = 0; x < width; x++)
+                {
+                    (buf[x3+2], buf[x3 + 1], buf[x3]) = CmykToRgb(src[srcTop + x4], src[srcTop + x4 + 1], src[srcTop + x4 + 2], src[srcTop + x4 + 3]);
+                    x3 += 3;
+                    x4 += 4;
+                }
+                Marshal.Copy(buf, 0, ptr, arrRowLength);
+                ptr += arrRowLength;
+            }
+            bmp.UnlockBits(bmpData);
+            return bmp;
+        }
+
+        private static Bitmap CtreateImageFromGray(byte[] src, int width, int height)
+        {
+            var bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            var rect = new Rectangle(0, 0, width, height);
+            var bmpData = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite, bmp.PixelFormat);
+            var arrRowLength = bmpData.Stride;
+            var ptr = bmpData.Scan0;
+            var buf = new byte[arrRowLength];
+            for (var y = 0; y < height; y++)
+            {
+                var srcTop = y * width;
+                for (var x = 0; x < width; x++)
+                {
+                    var c = src[srcTop + x];
+                    var x3 = x * 3;
+                    buf[x3] = c;
+                    buf[x3 + 1] = c;
+                    buf[x3 + 2] = c;
+                }
+                Marshal.Copy(buf, 0, ptr, arrRowLength);
+                ptr += arrRowLength;
+            }
+            bmp.UnlockBits(bmpData);
+            return bmp;
+        }
+        private static (byte r, byte g, byte b) CmykToRgb(byte c, byte m, byte y, byte k)
+        {
+            var r = (byte)((255 - c) * (255 - k) / 255);
+            var g = (byte)((255 - m) * (255 - k) / 255);
+            var b = (byte)((255 - y) * (255 - k) / 255);
+            return (r, g, b);
+
+        }
     }
 }
