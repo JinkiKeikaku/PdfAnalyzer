@@ -26,20 +26,7 @@ namespace PdfUtility
             mDict[key.Name]= value;
         }
 
-        /// <inheritdoc/>
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("<<");
-            foreach(var d in mDict)
-            {
-                sb.Append(d.Key);
-                sb.Append(" ");
-                sb.AppendLine(d.Value.ToString());
-            }
-            sb.AppendLine(">>");
-            return sb.ToString();
-        }
+        public void Clear() => mDict.Clear();
 
         public int Count=>mDict.Count;
         public KeyValuePair<string, PdfObject> GetAt(int i) => mDict.ElementAt(i);
@@ -98,6 +85,22 @@ namespace PdfUtility
             if (obj == null) throw new Exception($"GetDictionary:{name} is not PdfDictionary.");
             return obj;
         }
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("<<");
+            foreach (var d in mDict)
+            {
+                sb.Append(d.Key);
+                sb.Append(" ");
+                sb.AppendLine(d.Value.ToString());
+            }
+            sb.AppendLine(">>");
+            return sb.ToString();
+        }
+
         IEnumerator<KeyValuePair<string, PdfObject>> IEnumerable<KeyValuePair<string, PdfObject>>.GetEnumerator()
         {
             return mDict.GetEnumerator();

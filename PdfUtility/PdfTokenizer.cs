@@ -94,7 +94,6 @@ namespace PdfUtility
         private Stack<Token> mTokenStack = new Stack<Token>();
         private int mChar;
         private Stream mStream;
-        //        private long mPos = 0;
 
         public PdfTokenizer(Stream r)
         {

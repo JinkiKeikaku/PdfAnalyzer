@@ -8,99 +8,44 @@ using static System.Math;
 
 namespace PdfUtility
 {
-    public class PdfParser
+    class PdfParser
     {
-        PdfTokenizer mTokenizer = null!;
-        public Dictionary<int, (long pos, bool valid)> Xref = new();
-        public Dictionary<int, byte[]> Xref2 = new();
-
-        public PdfParser()
+        readonly PdfTokenizer mTokenizer;
+        readonly PdfXrefTable mXrefTable;
+        public PdfParser(Stream stream, PdfXrefTable xrefTable)
         {
+            mTokenizer = new PdfTokenizer(stream);
+            mXrefTable = xrefTable;
+        }
+        public PdfParser Copy(Stream stream)
+        {
+            return new PdfParser(stream, mXrefTable);
         }
 
-        public PdfParser Clone(Stream stream)
+        public PdfObject? GetObject(int reference)
         {
-            PdfParser parser = new PdfParser();
-            parser.mTokenizer = new PdfTokenizer(stream);
-            parser.Xref = Xref;
-            parser.Xref2 = Xref2;
-
-            return parser;
-
-        }
-
-        public List<(int ObjectNumber, PdfObject Obj)> GetXReferenceObjects()
-        {
-            var ret = new List<(int ObjectNumber, PdfObject Obj)>();
-            foreach (var x in Xref)
+            var pos = mXrefTable.GetStreamPosition(reference);
+            if (pos >= 0)
             {
-                var v = x.Value;
-                if (v.valid)
-                {
-                    var p = GetObjectFromXref(v.pos);
-                    ret.Add((x.Key, p));
-                }
+                var saved = mTokenizer.StreamPosition;
+                mTokenizer.StreamPosition = pos;
+                var obj = ParseObject<PdfIndirectObject>() ??
+                    throw new Exception("GetObject:Not indirect object.");
+                mTokenizer.StreamPosition = saved;
+                return obj.IndirectObject;
             }
-            foreach (var x in Xref2)
+            else
             {
-                var p = GetObjectFromXrefStream(x.Value);
-                ret.Add((x.Key, p));
+                var buf = mXrefTable.GetObjectStreamBuffer(reference);
+                if (buf == null) return null;
+                using var mem = new MemoryStream(buf);
+                var parser = new PdfParser(mem, mXrefTable);
+                return parser.ParseObject() ??
+                    throw new Exception("GetObject:Cannot get xref strteam object Not indirect object.");
             }
-            ret.Sort((x, y) => x.ObjectNumber - y.ObjectNumber);
-
-            return ret;
         }
 
-
-        private PdfObject GetObjectFromXref(long streamPosition)
-        {
-            var sp = mTokenizer.StreamPosition;
-            mTokenizer.StreamPosition = streamPosition;
-            var io = ParseObject<PdfIndirectObject>() ?? throw new Exception("GetEntityObject:Not indirect object.");
-            mTokenizer.StreamPosition = sp;
-            return io.IndirectObject;
-        }
-
-        private PdfObject GetObjectFromXrefStream(byte[] bytes)
-        {
-//            Debug.WriteLine($"GetObjectFromXrefStream ${bytes.Length}");
-
-            using var mem = new MemoryStream(bytes);
-            var tmp = mTokenizer;
-            mTokenizer = new PdfTokenizer(mem);
-            var io = ParseObject() ?? throw new Exception("GetEntityObject:cannot parse xref stream.");
-            mTokenizer = tmp;
-            return io;
-        }
-
-        public PdfObject? GetEntityObject(PdfObject? obj)
-        {
-            if (obj is PdfReference r)
-            {
-                if (Xref.ContainsKey(r.ObjectNumber))
-                {
-                    var v = Xref[r.ObjectNumber];
-                    if (!v.valid) throw new Exception("Reference is invalid(f).");
-                    var io = GetObjectFromXref(v.pos);
-                    return GetEntityObject(io);
-                }
-                else
-                {
-                    if (Xref2.ContainsKey(r.ObjectNumber) == true)
-                    {
-                        return GetEntityObject(GetObjectFromXrefStream(Xref2[r.ObjectNumber]));
-                    }
-                    return null;
-                }
-            }
-            return obj;
-        }
-
-        public T? ParseObject<T>() where T : PdfObject
-        {
-            return ParseObject() as T;
-
-        }
+        public T? ParseObject<T>() where T : PdfObject  => ParseObject() as T;
 
         public PdfObject? ParseObject()
         {
@@ -111,7 +56,7 @@ namespace PdfUtility
                     var dic = ParseDictionary();
                     if (mTokenizer.IsNextTokenStream())
                     {
-                        var length = (GetEntityObject(dic.GetValue("/Length")) as PdfNumber)!.IntValue;
+                        var length = GetEntityObject<PdfNumber>(dic.GetValue("/Length"))!.IntValue;
                         var buffer = mTokenizer.ReadBytes(length);
                         var td2 = mTokenizer.GetNextToken();
                         if (td2.Kind != TokenKind.Identifier || td2.GetString() != "endstream") throw new Exception("Stream cannot find 'endstream'");
@@ -132,8 +77,7 @@ namespace PdfUtility
                             if (t3.GetString() == "R") return new PdfReference((int)i1, (int)i2);
                             if (t3.GetString() == "obj")
                             {
-                                var obj = ParseObject();
-                                if (obj == null) throw new Exception("Cannot create PdfObject.ParseObject() return null.");
+                                var obj = ParseObject() ?? throw new Exception("Cannot create PdfObject.ParseObject() return null.");
                                 var t4 = mTokenizer.GetNextToken();
                                 if (t4.Kind != TokenKind.Identifier || t4.GetString() != "endobj")
                                 {
@@ -166,243 +110,13 @@ namespace PdfUtility
             throw new Exception("Cannot parse unknown object");
         }
 
-        /// <summary>
-        /// Check pdf header and return version(like 1.x). 
-        /// </summary>
-        /// <param name="stream">stream</param>
-        /// <returns>Version string like '1.x'. if not pdf file , return empty string .</returns>
-        public static string GetPdfVersion(Stream stream)
+        public T? GetEntityObject<T>(PdfObject? obj) where T : PdfObject => 
+            GetEntityObject(obj) as T;
+
+        public PdfObject? GetEntityObject(PdfObject? obj)
         {
-            stream.Position = 0;
-            var buf = new byte[5];
-            if (stream.Read(buf, 0, 5) == 5)
-            {
-                if (buf.SequenceEqual(Encoding.ASCII.GetBytes("%PDF-")))
-                {
-                    var buf2 = new byte[3];
-                    if (stream.Read(buf2, 0, 3) == 3)
-                    {
-                        var pdfVersion = Encoding.ASCII.GetString(buf2);
-                        return pdfVersion;
-                    }
-                }
-            }
-            return String.Empty;
-        }
-
-        public PdfDictionary Start(Stream stream)
-        {
-            var startxref = ParseStartxref(stream);
-            Debug.WriteLine($"startxref:{startxref}");
-            if (startxref < 0) throw new Exception("PDF:startxref not found.");
-            mTokenizer = new PdfTokenizer(stream);
-            mTokenizer.StreamPosition = startxref;
-            var trailer = ParseXRefTable();
-            if (trailer == null) throw new Exception("Trailer not found.");
-            return trailer;
-        }
-
-        private long ParseStartxref(Stream stream)
-        {
-            var size = Min(stream.Length, 1024);
-            stream.Seek(-size, SeekOrigin.End);
-            var buf = new byte[size];
-            stream.Read(buf);
-            var s = Encoding.ASCII.GetBytes("startxref");
-            var i = (int)(size - s.Length);
-            while (i >= 0)
-            {
-                if (buf[i..(i + s.Length)].SequenceEqual(s)) break;
-                i--;
-            }
-            if (i < 0) return -1;
-            i += "startxref".Length;
-            stream.Seek(-(size - i), SeekOrigin.End);
-            var tokenizer = new PdfTokenizer(stream);
-            var t = tokenizer.GetNextToken();
-            if (t.Kind == TokenKind.Number) return t.GetInt();
-            return -1;
-        }
-
-        private PdfDictionary ParseXRefTable()
-        {
-            PdfDictionary? trailer = null;
-
-            while (true)
-            {
-                if (ParseXRef())
-                {
-                    var t = ReadTrailer();
-                    if (trailer == null) trailer = t;
-                    //
-                    if (t.ContainsKey("/XRefStm"))
-                    {
-                        //hybrid referenceの時
-                        var xrefStmPos = t.GetInt("/XRefStm");
-                        mTokenizer.StreamPosition = xrefStmPos;
-                        continue;
-                    }
-                    if (!t.ContainsKey("/Prev")) return trailer;
-                    var prev = t.GetInt("/Prev");
-                    mTokenizer.StreamPosition = prev;
-                }
-                else
-                {
-                    var t = ParseXrefStream();
-                    if (trailer == null) trailer = t;
-                    if (t.ContainsKey("/XRefStm"))
-                    {
-                        //hybrid referenceの時。ちょっと自信がない。
-                        var xrefStmPos = t.GetInt("/XRefStm");
-                        mTokenizer.StreamPosition = xrefStmPos;
-                        continue;
-                    }
-                    if (!t.ContainsKey("/Prev")) return trailer;
-                    var prev = t.GetInt("/Prev");
-                    mTokenizer.StreamPosition = prev;
-                }
-            }
-        }
-
-        private bool ParseXRef()
-        {
-            //xref
-            //0 1
-            //00000000000 65535 f
-            //4 1
-            //00000000632 00000 n
-            //更新するとこのようなエントリになるそうなので対応（まだ見たことはない）。
-            var t1 = mTokenizer.GetNextToken();
-            if (t1.Kind == TokenKind.Identifier && t1.GetString() == "xref")
-            {
-                while (true)
-                {
-                    t1 = mTokenizer.GetNextToken();
-                    if (t1.Kind != TokenKind.Number)
-                    {
-                        mTokenizer.PushToken(t1);
-                        return true;
-                    }
-                    var t2 = mTokenizer.GetNextToken();
-                    if (t2.Kind != TokenKind.Number) throw new Exception("Cannot find xref numbers");
-                    var start = t1.GetInt();// Convert.ToInt32(t1.Value);
-                    var n = t2.GetInt();// Convert.ToInt32(t2.Value);
-                    for (var i = 0; i < n; i++)
-                    {
-                        t1 = mTokenizer.GetNextToken();
-                        mTokenizer.GetNextToken();
-                        t2 = mTokenizer.GetNextToken();
-                        if (t1.Kind != TokenKind.Number || t2.Kind != TokenKind.Identifier) throw new Exception("Cannot find xref numbers");
-                        //キーがXref辞書にあればそれは古い物なので追加しない。
-                        //まだそのようなファイルを見ていないのでこれでいいかわからない。
-                        if (!Xref.ContainsKey(i + start) && !Xref2.ContainsKey(i + start))
-                        {
-                            Xref.Add(i + start, (long.Parse(t1.GetString()), t2.GetString() == "n"));
-                        }
-                    }
-                }
-            }
-            mTokenizer.PushToken(t1);
-            return false;
-
-        }
-
-        private PdfDictionary ParseXrefStream()
-        {
-            var indirectObject = ParseObject<PdfIndirectObject>() ?? throw new Exception("connot find xref object."); ;
-            var stream = indirectObject.IndirectObject as PdfStream ?? throw new Exception("connot find xref."); ;
-            var buf = stream.GetExtractedBytes() ?? throw new Exception("connot extract xref.");
-            var w = stream.Dictionary.GetValue<PdfArray>("/W") ?? throw new Exception("connot extract xref, cannot find W.");
-            var n1 = w.GetAt<PdfNumber>(0)!.IntValue;
-            var n2 = w.GetAt<PdfNumber>(1)!.IntValue;
-            var n3 = w.GetAt<PdfNumber>(2)!.IntValue;
-            var n0 = n1 + n2 + n3;
-
-            var indexArray = stream.Dictionary.GetValue<PdfArray>("/Index") ?? new();
-            var indexList = new List<int>();
-            for (var i = 0; i < indexArray.Count; i += 2)
-            {
-                if (indexArray[i] is not PdfNumber topNum) throw new Exception("ParseXrefStream bad index");
-                if (indexArray[i + 1] is not PdfNumber countNum) throw new Exception("ParseXrefStream bad index");
-                var top = topNum.IntValue;
-                var count = countNum.IntValue;
-                for(var x = 0; x < count; x++)
-                {
-                    indexList.Add(x + top);
-                }
-            }
-
-            var index = 0;
-            for (int i = 0; i < buf.Length; i += n0)
-            {
-                //まずtypeが1の時を調べる。
-                if (buf[i + n1 - 1] == 1)
-                {
-                    //indexList.Count == 0=>/Indexが無かったときは並び順を使う（？）。
-                    //リファレンスにその記述がみつからなかった。
-                    var idx = indexList.Count == 0 ? index : indexList[index];
-                    if (!Xref.ContainsKey(idx) && !Xref2.ContainsKey(idx))
-                    {
-                        Xref.Add(idx, (ConvertInt(buf, i + n1, n2), true));
-                    }
-                }
-                index++;
-            }
-
-            for (int i = 0; i < buf.Length; i += n0)
-            {
-                //typeが2の時を調べる(圧縮)。
-                if (buf[i + n1 - 1] == 2)
-                {
-                    var objectNumber = ConvertInt(buf, i + n1, n2);
-                    var r = new PdfReference(objectNumber, 0);
-                    var ps = GetEntityObject(r) as PdfStream;
-                    if (ps == null) throw new Exception("cannnot find xref indirect stream.");
-                    var eb = ps.GetExtractedBytes();
-                    if (eb == null) throw new Exception("cannnot extract xref object stream.");
-                    if (ps.Dictionary.GetValue<PdfName>("/Type")?.Name != "/ObjStm")
-                    {
-                        throw new Exception("stream is not object stream.");
-                    }
-                    int n = ps.Dictionary.GetInt("/N");
-                    int first = ps.Dictionary.GetInt("/First");
-                    //var bufPos = new (int, int)[n];
-                    //var tmp = Encoding.ASCII.GetString(eb);
-                    //Debug.WriteLine(tmp);
-                    var ss = Encoding.ASCII.GetString(eb[0..first]).Split();
-                    for (var i0 = 0; i0 < n; i0++)
-                    {
-                        index = int.Parse(ss[i0 * 2]);
-                        var px = int.Parse(ss[i0 * 2 + 1]) + first;//bufferPos
-                        if (!Xref.ContainsKey(index) && !Xref2.ContainsKey(index))
-                        {
-                            Xref2[index] = eb[px..];
-                        }
-                    }
-                }
-            }
-            return stream.Dictionary;
-        }
-
-        private int ConvertInt(byte[] buf, int pos, int size)
-        {
-            var x = 0;
-            for (var j = 0; j < size; j++)
-            {
-                x = x * 256 + buf[pos + j];
-            }
-            return x;
-        }
-
-        private PdfDictionary ReadTrailer()
-        {
-            var t = mTokenizer.GetNextToken();
-            if (t.Kind != TokenKind.Identifier || t.GetString() != "trailer")
-            {
-                throw new Exception("cannot find trailer.");
-            }
-            var d = ParseObject<PdfDictionary>() ??  throw new Exception("cannot find trailer dictionary.");
-            return d;
+            if (obj is not PdfReference r) return obj;
+            return GetEntityObject(GetObject(r.ObjectNumber));
         }
 
         PdfArray ParseArray()

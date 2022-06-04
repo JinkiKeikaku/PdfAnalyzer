@@ -146,7 +146,7 @@ namespace PdfUtility
             return sb.ToString();
         }
 
-        public void InitMap(PdfParser parser)
+        internal void InitMap(PdfParser parser)
         {
             if (FontDict.ContainsKey("/ToUnicode"))
             {
@@ -157,13 +157,12 @@ namespace PdfUtility
                     if (buf != null)
                     {
                         var ms = new MemoryStream(buf);
-                        var sr = new StreamReader(ms, Encoding.ASCII);
-                        var s = sr.ReadToEnd();
-
+                        //var sr = new StreamReader(ms, Encoding.ASCII);
+                        //var s = sr.ReadToEnd();
                         //Debug.WriteLine(Name);
                         //Debug.WriteLine(s);
-                        ms = new MemoryStream(buf);
-                        ParserCid(parser.Clone(ms));
+                        //ms = new MemoryStream(buf);
+                        ParserCid(parser.Copy(ms));
                     }
                 }
             }
@@ -251,7 +250,7 @@ namespace PdfUtility
                     case "Japan1":
                         {
                             using var mem = new MemoryStream(Properties.Resources.UniJIS2004_UTF16_H);
-                            var p = parser.Clone(mem);
+                            var p = parser.Copy(mem);
                             ParserCid(p);
                         }
                         break;
