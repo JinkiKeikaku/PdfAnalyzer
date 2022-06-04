@@ -8,7 +8,7 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
     <Authors>Junkbulk</Authors>
     <Company>Jinki-Keikaku</Company>
     <Copyright>Copyright © 2022 JinkiKeikaku</Copyright>
