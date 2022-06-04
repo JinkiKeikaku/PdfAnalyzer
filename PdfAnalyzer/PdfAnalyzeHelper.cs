@@ -144,19 +144,29 @@ namespace PdfAnalyzer
                             if (bytes == null) return;
                             var width = item.Parent.Dictionary.GetValue<PdfNumber>("/Width");
                             var height = item.Parent.Dictionary.GetValue<PdfNumber>("/Height");
-                            var colorSpace = item.Parent.Dictionary.GetValue<PdfName>("/ColorSpace");
+                            var colorSpace = item.Parent.Dictionary.GetValue("/ColorSpace");
                             if (width != null && height != null)
                             {
-                                var cs = colorSpace?.Name switch
-                                {
-                                    "/DeviceRGB" => ImageType.RGB,
-                                    "/DeviceCMYK" => ImageType.CMYK,
-                                    "/DeviceGray" => ImageType.Gray,
-                                    _=> throw new NotImplementedException($"Not supported image {colorSpace?.Name}")
-                                };
-                                var bmp = CtreateImageFromRaw(bytes, width.IntValue, height.IntValue, cs);
-                                bmp.Save(path);
-                                Process.Start("Explorer", path);
+                                switch (colorSpace) {
+                                    case PdfName csName:
+                                        {
+                                            OpenImage(bytes, width.IntValue, height.IntValue, path, csName);
+                                        }
+                                        break;
+                                    case PdfArray csArray:
+                                        {
+                                            throw new Exception("ColorSpace: not support Array.");
+                                            //if (csArray[0] is not PdfName csName) throw new Exception("colorSpace [0] is not name.");
+                                            //if(csName != "/ICCBased") throw new Exception("ColorSpace only support ICCBased.");
+                                            //var dic = doc.GetEntityObject<PdfDictionary>(csArray[1]) ??
+                                            //    throw new Exception($"Cannot find ColorSpace");
+                                            //var alt = dic.GetValue<PdfName>("/Alternate") ??
+                                            //    throw new Exception($"not contains /Alternate color space name");
+                                            //OpenImage(bytes, width.IntValue, height.IntValue, path, alt.Name);
+                                        }
+                                    default:
+                                        throw new Exception("ColorSpace: unknown object.");
+                                }
                             }
                         }
                         break;
@@ -166,6 +176,20 @@ namespace PdfAnalyzer
             {
                 Utility.ShowErrorMessage(e.Message);
             }
+        }
+
+        static void OpenImage(byte[] bytes, int width, int height, string path, PdfName colorName)
+        {
+            var cs = colorName.Name switch
+            {
+                "/DeviceRGB" => ImageType.RGB,
+                "/DeviceCMYK" => ImageType.CMYK,
+                "/DeviceGray" => ImageType.Gray,
+                _ => throw new NotImplementedException($"Not supported image {colorName.Name}")
+            };
+            var bmp = CtreateImageFromRaw(bytes, width, height, cs);
+            bmp.Save(path);
+            Process.Start("Explorer", path);
         }
 
         /// <summary>
@@ -304,6 +328,7 @@ namespace PdfAnalyzer
             RGB,    //PNG
             CMYK,    //CMYK
             Gray,   //8bit
+            ICCBased,
         }
 
         public static Bitmap CtreateImageFromRaw(byte[] src, int width, int height, ImageType imageType)
