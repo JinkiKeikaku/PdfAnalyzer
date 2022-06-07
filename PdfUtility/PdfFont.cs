@@ -157,11 +157,6 @@ namespace PdfUtility
                     if (buf != null)
                     {
                         var ms = new MemoryStream(buf);
-                        //var sr = new StreamReader(ms, Encoding.ASCII);
-                        //var s = sr.ReadToEnd();
-                        //Debug.WriteLine(Name);
-                        //Debug.WriteLine(s);
-                        //ms = new MemoryStream(buf);
                         ParserCid(parser.Copy(ms));
                     }
                 }
@@ -193,7 +188,7 @@ namespace PdfUtility
                         break;
                     case PdfName name:
                         {
-                            if (name == "/Identity-H")
+                            if (name.Name == "/Identity-H")
                             {
                                 var dd = parser.GetEntityObject(FontDict.GetValue("/DescendantFonts")) as PdfArray;
                                 if (dd != null && dd.Count > 0)

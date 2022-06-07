@@ -137,7 +137,7 @@ namespace PdfUtility
             var ret = new List<PdfObject>();
             using var ms = new MemoryStream(contents);
             var parser = new PdfParser(ms, XrefTable);
-            if (parser == null) throw new Exception("Cannot create graohics parser.");
+//            if (parser == null) throw new Exception("Cannot create graohics parser.");
             while (true)
             {
                 var obj = parser.ParseObject();
@@ -416,10 +416,8 @@ namespace PdfUtility
                         ParseXrefStream(stream);
                     }
                     if (!t.ContainsKey("/Prev")) break;
-                    {
-                        var prev = t.GetInt("/Prev");
-                        stream.Position = prev;
-                    }
+                    var prev = t.GetInt("/Prev");
+                    stream.Position = prev;
                 }
                 else
                 {
@@ -563,7 +561,7 @@ namespace PdfUtility
                         var px = int.Parse(ss[i0 * 2 + 1]) + first;
                         if (!XrefTable.ContainsKey(index))
                         {
-                            XrefTable.Add(index, eb[px..]);
+                            XrefTable.Add(index, (eb, px));
                         }
                     }
                 }

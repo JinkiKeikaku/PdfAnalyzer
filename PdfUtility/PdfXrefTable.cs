@@ -10,7 +10,7 @@ namespace PdfUtility
     class PdfXrefTable
     {
         public Dictionary<int, (long pos, bool valid)> XrefMap { get; } = new();
-        public Dictionary<int, byte[]> XrefStreamMap { get; } = new();
+        public Dictionary<int, (byte[], int)> XrefStreamMap { get; } = new();
 
         public void Clear()
         {
@@ -20,7 +20,7 @@ namespace PdfUtility
 
         public bool ContainsKey(int key)=> XrefMap.ContainsKey(key) || XrefStreamMap.ContainsKey(key);
         internal void Add(int key, (long, bool) value) => XrefMap[key] = value;
-        internal void Add(int key, byte[] buffer) => XrefStreamMap[key] = buffer;
+        internal void Add(int key, (byte[] buffer, int pos) streamBuf) => XrefStreamMap[key] = streamBuf;
 
         internal long GetStreamPosition(int key)
         {
@@ -30,11 +30,10 @@ namespace PdfUtility
             return v.pos;
         }
 
-        internal byte[]? GetObjectStreamBuffer(int key)
+        internal (byte[]?, int) GetObjectStreamBuffer(int key)
         {
-            if (!XrefStreamMap.ContainsKey(key)) return null;
+            if (!XrefStreamMap.ContainsKey(key)) return (null, -1);
             return XrefStreamMap[key];
         }
-
     }
 }
