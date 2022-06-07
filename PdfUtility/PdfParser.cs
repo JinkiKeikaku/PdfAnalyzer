@@ -38,7 +38,7 @@ namespace PdfUtility
             {
                 var bp = mXrefTable.GetObjectStreamBuffer(reference);
                 if (bp.Item1 == null) return null;
-                using var mem = new MemoryStream(bp.Item1[bp.Item2..]);
+                using var mem = new MemoryStream(bp.Item1, bp.Item2, bp.Item1.Length);
                 var parser = new PdfParser(mem, mXrefTable);
                 return parser.ParseObject() ??
                     throw new Exception("GetObject:Cannot get xref strteam object Not indirect object.");
