@@ -119,7 +119,7 @@ namespace PdfUtility
                         for (int i = 0; i < bytes.Length; i += 2)
                         {
                             var c = (i + 1) < bytes.Length ? (((int)bytes[i]) << 8) + bytes[i + 1] : bytes[i];
-                            sb.Append(mCMap.GetValueOrDefault(c, (char)c));
+                            sb.Append(mCMap.GetValueOrDefault(c, '?');
                         }
                         return sb.ToString();
                     }
@@ -272,6 +272,11 @@ namespace PdfUtility
             CidRange,
         };
 
+        /// <summary>
+        /// cidをunicodeに変換するマップの初期化
+        /// ただし、サロゲートペアは対応しない
+        /// </summary>
+        /// <param name="parser"></param>
         private void ParserCid(PdfParser parser)
         {
             CidState state;
@@ -299,7 +304,11 @@ namespace PdfUtility
                                 var dstCode = GetIntFromCode(stack[i + 2]);//.ConvertToInt();
                                 for (var sc = srcCode0; sc <= srcCode1; sc++)
                                 {
-                                    mCMap.Add(sc, (Char)dstCode++);
+                                    if (dstCode >= 0 && dstCode < 65536)
+                                    {
+                                        mCMap.Add(sc, (Char)dstCode);
+                                    }
+                                    dstCode++;
                                 }
                             }
                             state = CidState.None;
@@ -316,7 +325,10 @@ namespace PdfUtility
                             {
                                 var srcCode = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
                                 var dstCode = GetIntFromCode(stack[i + 1]);// dh.ConvertToInt();
-                                mCMap.Add(srcCode, (Char)dstCode);
+                                if (dstCode >= 0 && dstCode < 65536)
+                                {
+                                    mCMap.Add(srcCode, (Char)dstCode);
+                                }
                             }
                             state = CidState.None;
                             stack.Clear();
@@ -330,7 +342,10 @@ namespace PdfUtility
                             {
                                 var dstCode = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
                                 var srcCode = GetIntFromCode(stack[i + 1]);// dh.ConvertToInt();
-                                mCMap[srcCode] = (Char)dstCode;
+                                if (dstCode >= 0 && dstCode < 65536)
+                                {
+                                    mCMap[srcCode] = (Char)dstCode;
+                                }
                             }
                             state = CidState.None;
                             stack.Clear();
@@ -347,7 +362,11 @@ namespace PdfUtility
                                 var srcCode = GetIntFromCode(stack[i + 2]);// dh.ConvertToInt();
                                 for (var dst = dstCode0; dst <= dstCode1; dst++)
                                 {
-                                    mCMap[srcCode++] = (Char)dst;
+                                    if (dst >= 0 && dst < 65536)
+                                    {
+                                        mCMap[srcCode] = (Char)dst;
+                                    }
+                                    srcCode++;
                                 }
                             }
                             state = CidState.None;

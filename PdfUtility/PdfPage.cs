@@ -9,8 +9,19 @@ namespace PdfUtility
     public class PdfPageAttribute
     {
         public PdfRectangle MediaBox { get; set; } = new(0, 0, 0, 0);
-        public PdfRectangle CropBox { get; set; } = new(0, 0, 0, 0);
+        public PdfRectangle CropBox {
+            get{
+                return  mCropBox ?? MediaBox; 
+            }
+            set
+            {
+                mCropBox = value;
+
+            } 
+        }
         public int Rotate { get; set; } = 0;
+
+        private PdfRectangle? mCropBox = null;
     }
 
     public class PdfPage

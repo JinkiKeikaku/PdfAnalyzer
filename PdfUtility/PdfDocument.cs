@@ -172,7 +172,10 @@ namespace PdfUtility
         {
             var rootPages = GetEntityObject<PdfDictionary>(Root.GetValue("/Pages"));
             if (rootPages == null) throw new Exception("Root pages is null. maybe document is not open.");
-            var pageDic = GetPageDictionary(rootPages, pageIndex, 0);
+
+            var pageAttribute = new PdfPageAttribute();
+
+            var pageDic = GetPageDictionary(rootPages, pageAttribute, pageIndex);
             if (pageDic == null) throw new Exception($"cannot find page {pageIndex}");
             var contents = GetEntityObject(pageDic.GetValue("/Contents"));
             PdfArray contentsArray = new();
@@ -185,7 +188,7 @@ namespace PdfUtility
                 contentsArray = pdfArray;
             }
             var page = new PdfPage();
-            page.Attribute = GetPageAttribute(pageDic);
+            page.Attribute = pageAttribute;
             var resources = GetEntityObject<PdfDictionary>(pageDic.GetValue("/Resources"));
             if (resources == null) throw new Exception("Page has no resource dictionary.");
             page.ResourcesDictionary = resources;
@@ -212,9 +215,9 @@ namespace PdfUtility
         /// <param name="pageIndex">0から始まるページのインデックス。１ページ目が0になる。</param>
         /// <returns>ページのディクショナリを返す。無ければnull。</returns>
         /// <exception cref="Exception"></exception>
-        public PdfDictionary? GetPageDictionary(PdfDictionary pages, int pageIndex)
+        public PdfDictionary? GetPageDictionary(PdfDictionary pages, PdfPageAttribute pageAttribute, int pageIndex)
         {
-            return GetPageDictionary(pages, pageIndex, 0);
+            return GetPageDictionary(pages, pageAttribute, pageIndex, 0);
         }
 
         /// <summary>
@@ -334,8 +337,9 @@ namespace PdfUtility
             return -1;
         }
 
-        private PdfDictionary? GetPageDictionary(PdfDictionary pages, int pageIndex, int topPage)
+        private PdfDictionary? GetPageDictionary(PdfDictionary pages, PdfPageAttribute pageAttribute, int pageIndex, int topPage)
         {
+            GetPageAttribute(pages, pageAttribute);
             var c = topPage;
             var kids = pages.GetValue<PdfArray>("/Kids");
             if (kids == null) throw new Exception("cannot find kids in pages dictionary");
@@ -346,14 +350,18 @@ namespace PdfUtility
                 switch (pd.GetValue<PdfName>("/Type")?.Name)
                 {
                     case "/Page":
-                        if (c == pageIndex) return pd;
+                        if (c == pageIndex)
+                        {
+                            GetPageAttribute(pd, pageAttribute);
+                            return pd;
+                        }
                         c++;
                         break;
                     case "/Pages":
                         var dc = pd.GetInt("/Count");
                         if (pageIndex < dc + c)
                         {
-                            return GetPageDictionary(pd, pageIndex, c);
+                            return GetPageDictionary(pd, pageAttribute, pageIndex, c);
                         }
                         c += dc;
                         break;
@@ -383,19 +391,14 @@ namespace PdfUtility
         }
 
 
-        private PdfPageAttribute GetPageAttribute(PdfDictionary pdfDic)
+        private void GetPageAttribute(PdfDictionary pdfDic, PdfPageAttribute pageAttribute)
         {
-            PdfPageAttribute pdfPageAttribute = new();
             var mediaBox = GetRectFromPage(pdfDic, "/MediaBox", true);
-            if (mediaBox == null) throw new Exception("The page has no MediaBox.");
-            pdfPageAttribute.MediaBox = mediaBox;
+            if(mediaBox != null) pageAttribute.MediaBox = mediaBox;
             var cropBox = GetRectFromPage(pdfDic, "/CropBox", true);
-            pdfPageAttribute.CropBox = cropBox ?? mediaBox.Copy();
-            if (mediaBox == null) throw new Exception("The page has no MediaBox.");
+            if(cropBox != null) pageAttribute.CropBox = cropBox;
             var rotate = GetNumberFromPage(pdfDic, "/Rotate", true);
-            if (rotate != null) pdfPageAttribute.Rotate = rotate.IntValue;
-
-            return pdfPageAttribute;
+            if (rotate != null) pageAttribute.Rotate = rotate.IntValue;
         }
 
 
