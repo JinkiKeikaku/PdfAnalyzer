@@ -142,6 +142,7 @@ namespace PdfUtility
             {
                 var obj = parser.ParseObject();
                 if (obj == null) break;
+//                Debug.WriteLine(obj.ToString());
                 ret.Add(obj);
                 if (obj is PdfIdentifier)
                 {

@@ -38,7 +38,7 @@ namespace PdfUtility
             {
                 var bp = mXrefTable.GetObjectStreamBuffer(reference);
                 if (bp.Item1 == null) return null;
-                using var mem = new MemoryStream(bp.Item1, bp.Item2, bp.Item1.Length);
+                using var mem = new MemoryStream(bp.Item1, bp.Item2, bp.Item1.Length - bp.Item2);
                 var parser = new PdfParser(mem, mXrefTable);
                 return parser.ParseObject() ??
                     throw new Exception("GetObject:Cannot get xref strteam object Not indirect object.");
@@ -107,7 +107,7 @@ namespace PdfUtility
                     break;
             }
             if (t.Kind == TokenKind.Eof) return null;
-            throw new Exception("Cannot parse unknown object");
+            throw new Exception($"Cannot parse unknown object {t}");
         }
 
         public T? GetEntityObject<T>(PdfObject? obj) where T : PdfObject => 

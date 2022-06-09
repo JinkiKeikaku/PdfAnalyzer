@@ -119,7 +119,7 @@ namespace PdfUtility
                         for (int i = 0; i < bytes.Length; i += 2)
                         {
                             var c = (i + 1) < bytes.Length ? (((int)bytes[i]) << 8) + bytes[i + 1] : bytes[i];
-                            sb.Append(mCMap.GetValueOrDefault(c, '?');
+                            sb.Append(mCMap.GetValueOrDefault(c, '?'));
                         }
                         return sb.ToString();
                     }
