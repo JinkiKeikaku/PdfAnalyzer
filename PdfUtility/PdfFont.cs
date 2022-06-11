@@ -211,53 +211,52 @@ namespace PdfUtility
                             break;
                         }
                 }
-                var fontDescriptor = parser.GetEntityObject(FontDict.GetValue("/FontDescriptor")) as PdfDictionary;
-                if (fontDescriptor == null)
+            }
+            var fontDescriptor = parser.GetEntityObject(FontDict.GetValue("/FontDescriptor")) as PdfDictionary;
+            if (fontDescriptor == null)
+            {
+                var dd = parser.GetEntityObject(FontDict.GetValue("/DescendantFonts")) as PdfArray;
+                if (dd != null && dd.Count > 0)
                 {
-                    var dd = parser.GetEntityObject(FontDict.GetValue("/DescendantFonts")) as PdfArray;
-                    if (dd != null && dd.Count > 0)
+                    if (parser.GetEntityObject(dd[0]) is PdfDictionary d)
                     {
-                        if (parser.GetEntityObject(dd[0]) is PdfDictionary d)
-                        {
-                            fontDescriptor = parser.GetEntityObject(d.GetValue("/FontDescriptor")) as PdfDictionary;
-                        }
+                        fontDescriptor = parser.GetEntityObject(d.GetValue("/FontDescriptor")) as PdfDictionary;
                     }
                 }
-                if (fontDescriptor != null)
-                {
-                    var bb = GetFontBBox(parser, fontDescriptor);
-                    if (bb != null) FontBBox = bb;
-                    var a = parser.GetEntityObject(fontDescriptor.GetValue("/Ascent")) as PdfNumber;
-                    var h = parser.GetEntityObject(fontDescriptor.GetValue("/CapHeight")) as PdfNumber;
-                    var d = parser.GetEntityObject(fontDescriptor.GetValue("/Descent")) as PdfNumber;
-                    if (a != null) Ascent = a.DoubleValue;
-                    if (h != null) CapHeight = h.DoubleValue;
-                    if (d != null) Descent = d.DoubleValue;
-                }
             }
-
-            void MakeCIDFontCMap(PdfParser parser, string registry, string ordering)
+            if (fontDescriptor != null)
             {
-                if (registry != "Adobe")
-                {
-                    Debug.WriteLine("CIDFont:Registry is supported only Adobe");
-                    return;
-                }
-                switch (ordering)
-                {
-                    case "Japan1":
-                        {
-                            using var mem = new MemoryStream(Properties.Resources.UniJIS2004_UTF16_H);
-                            var p = parser.Copy(mem);
-                            ParserCid(p);
-                        }
-                        break;
-                    default:
-                        Debug.WriteLine($"CIDFont:Ordering name is not supported :: {ordering} ");
-                        return;
-                }
-
+                var bb = GetFontBBox(parser, fontDescriptor);
+                if (bb != null) FontBBox = bb;
+                var a = parser.GetEntityObject(fontDescriptor.GetValue("/Ascent")) as PdfNumber;
+                var h = parser.GetEntityObject(fontDescriptor.GetValue("/CapHeight")) as PdfNumber;
+                var d = parser.GetEntityObject(fontDescriptor.GetValue("/Descent")) as PdfNumber;
+                if (a != null) Ascent = a.DoubleValue;
+                if (h != null) CapHeight = h.DoubleValue;
+                if (d != null) Descent = d.DoubleValue;
             }
+        }
+        void MakeCIDFontCMap(PdfParser parser, string registry, string ordering)
+        {
+            if (registry != "Adobe")
+            {
+                Debug.WriteLine("CIDFont:Registry is supported only Adobe");
+                return;
+            }
+            switch (ordering)
+            {
+                case "Japan1":
+                    {
+                        using var mem = new MemoryStream(Properties.Resources.UniJIS2004_UTF16_H);
+                        var p = parser.Copy(mem);
+                        ParserCid(p);
+                    }
+                    break;
+                default:
+                    Debug.WriteLine($"CIDFont:Ordering name is not supported :: {ordering} ");
+                    return;
+            }
+
         }
 
         PdfRectangle? GetFontBBox(PdfParser parser, PdfDictionary fontDescriptor)
