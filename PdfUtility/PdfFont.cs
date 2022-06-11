@@ -14,8 +14,10 @@ namespace PdfUtility
         public string Name;
         public PdfDictionary FontDict;
         public PdfRectangle FontBBox = new(0, 0, 1000, 1000);
-        private Dictionary<int, Char> mCMap = new();
+//        private Dictionary<int, Char> mCMap = new();
         private Dictionary<int, string> mDifferences = new();
+        private CMap mCmap = new();
+
 
 
         //FontDescriptionにCapHeighしかないこともある。
@@ -115,13 +117,14 @@ namespace PdfUtility
                 default:
                 case "/Identity-H":
                     {
-                        var sb = new StringBuilder();
-                        for (int i = 0; i < bytes.Length; i += 2)
-                        {
-                            var c = (i + 1) < bytes.Length ? (((int)bytes[i]) << 8) + bytes[i + 1] : bytes[i];
-                            sb.Append(mCMap.GetValueOrDefault(c, '?'));
-                        }
-                        return sb.ToString();
+                        return mCmap.Convert(bytes);
+                        //var sb = new StringBuilder();
+                        //for (int i = 0; i < bytes.Length; i += 2)
+                        //{
+                        //    var c = (i + 1) < bytes.Length ? (((int)bytes[i]) << 8) + bytes[i + 1] : bytes[i];
+                        //    sb.Append(mCmap.GetValueOrDefault(c, '?'));;
+                        //}
+                        //return sb.ToString();
                     }
 
             }
@@ -263,14 +266,14 @@ namespace PdfUtility
             return a?.GetRectangle();
         }
 
-        enum CidState
-        {
-            None,
-            BfChar,
-            BfRange,
-            CidChar,
-            CidRange,
-        };
+        //enum CidState
+        //{
+        //    None,
+        //    BfChar,
+        //    BfRange,
+        //    CidChar,
+        //    CidRange,
+        //};
 
         /// <summary>
         /// cidをunicodeに変換するマップの初期化
@@ -279,103 +282,103 @@ namespace PdfUtility
         /// <param name="parser"></param>
         private void ParserCid(PdfParser parser)
         {
-            CidState state;
+            mCmap.ParserCid(parser);
+            //CidState state;
+            //var stack = new List<PdfObject>();
+            //while (true)
+            //{
+            //    var obj = parser.ParseObject();
+            //    if (obj == null) break;
+            //    stack.Add(obj);
+            //    //                Debug.WriteLine(obj);
+            //    if (obj is PdfIdentifier id)
+            //    {
+            //        switch (id.Identifier)
+            //        {
+            //            case "beginbfrange":
+            //                state = CidState.BfRange;
+            //                stack.Clear();
+            //                break;
+            //            case "endbfrange":
+            //                for (var i = 0; i < stack.Count - 1; i += 3)
+            //                {
+            //                    var srcCode0 = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
+            //                    var srcCode1 = GetIntFromCode(stack[i + 1]);// as PdfHexString)!.ConvertToInt();
+            //                    var dstCode = GetIntFromCode(stack[i + 2]);//.ConvertToInt();
+            //                    for (var sc = srcCode0; sc <= srcCode1; sc++)
+            //                    {
+            //                        if (dstCode >= 0 && dstCode < 65536)
+            //                        {
+            //                            mCMap.Add(sc, (Char)dstCode);
+            //                        }
+            //                        dstCode++;
+            //                    }
+            //                }
+            //                state = CidState.None;
+            //                stack.Clear();
+            //                break;
 
-            var stack = new List<PdfObject>();
-            while (true)
-            {
-                var obj = parser.ParseObject();
-                if (obj == null) break;
-                stack.Add(obj);
-                //                Debug.WriteLine(obj);
-                if (obj is PdfIdentifier id)
-                {
-                    switch (id.Identifier)
-                    {
-                        case "beginbfrange":
-                            state = CidState.BfRange;
-                            stack.Clear();
-                            break;
-                        case "endbfrange":
-                            for (var i = 0; i < stack.Count - 1; i += 3)
-                            {
-                                var srcCode0 = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
-                                var srcCode1 = GetIntFromCode(stack[i + 1]);// as PdfHexString)!.ConvertToInt();
-                                var dstCode = GetIntFromCode(stack[i + 2]);//.ConvertToInt();
-                                for (var sc = srcCode0; sc <= srcCode1; sc++)
-                                {
-                                    if (dstCode >= 0 && dstCode < 65536)
-                                    {
-                                        mCMap.Add(sc, (Char)dstCode);
-                                    }
-                                    dstCode++;
-                                }
-                            }
-                            state = CidState.None;
-                            stack.Clear();
-                            break;
 
+            //            case "beginbfchar":
+            //                state = CidState.BfChar;
+            //                stack.Clear();
+            //                break;
+            //            case "endbfchar":
+            //                for (var i = 0; i < stack.Count - 1; i += 2)
+            //                {
+            //                    var srcCode = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
+            //                    var dstCode = GetIntFromCode(stack[i + 1]);// dh.ConvertToInt();
+            //                    if (dstCode >= 0 && dstCode < 65536)
+            //                    {
+            //                        mCMap.Add(srcCode, (Char)dstCode);
+            //                    }
+            //                }
+            //                state = CidState.None;
+            //                stack.Clear();
+            //                break;
+            //            case "begincidchar":
+            //                state = CidState.CidChar;
+            //                stack.Clear();
+            //                break;
+            //            case "endcidchar":
+            //                for (var i = 0; i < stack.Count - 1; i += 2)
+            //                {
+            //                    var dstCode = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
+            //                    var srcCode = GetIntFromCode(stack[i + 1]);// dh.ConvertToInt();
+            //                    if (dstCode >= 0 && dstCode < 65536)
+            //                    {
+            //                        mCMap[srcCode] = (Char)dstCode;
+            //                    }
+            //                }
+            //                state = CidState.None;
+            //                stack.Clear();
+            //                break;
+            //            case "begincidrange":
+            //                state = CidState.CidRange;
+            //                stack.Clear();
+            //                break;
+            //            case "endcidrange":
+            //                for (var i = 0; i < stack.Count - 1; i += 3)
+            //                {
+            //                    var dstCode0 = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
+            //                    var dstCode1 = GetIntFromCode(stack[i + 1]);// as PdfHexString)!.ConvertToInt();
+            //                    var srcCode = GetIntFromCode(stack[i + 2]);// dh.ConvertToInt();
+            //                    for (var dst = dstCode0; dst <= dstCode1; dst++)
+            //                    {
+            //                        if (dst >= 0 && dst < 65536)
+            //                        {
+            //                            mCMap[srcCode] = (Char)dst;
+            //                        }
+            //                        srcCode++;
+            //                    }
+            //                }
+            //                state = CidState.None;
+            //                stack.Clear();
+            //                break;
 
-                        case "beginbfchar":
-                            state = CidState.BfChar;
-                            stack.Clear();
-                            break;
-                        case "endbfchar":
-                            for (var i = 0; i < stack.Count - 1; i += 2)
-                            {
-                                var srcCode = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
-                                var dstCode = GetIntFromCode(stack[i + 1]);// dh.ConvertToInt();
-                                if (dstCode >= 0 && dstCode < 65536)
-                                {
-                                    mCMap.Add(srcCode, (Char)dstCode);
-                                }
-                            }
-                            state = CidState.None;
-                            stack.Clear();
-                            break;
-                        case "begincidchar":
-                            state = CidState.CidChar;
-                            stack.Clear();
-                            break;
-                        case "endcidchar":
-                            for (var i = 0; i < stack.Count - 1; i += 2)
-                            {
-                                var dstCode = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
-                                var srcCode = GetIntFromCode(stack[i + 1]);// dh.ConvertToInt();
-                                if (dstCode >= 0 && dstCode < 65536)
-                                {
-                                    mCMap[srcCode] = (Char)dstCode;
-                                }
-                            }
-                            state = CidState.None;
-                            stack.Clear();
-                            break;
-                        case "begincidrange":
-                            state = CidState.CidRange;
-                            stack.Clear();
-                            break;
-                        case "endcidrange":
-                            for (var i = 0; i < stack.Count - 1; i += 3)
-                            {
-                                var dstCode0 = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
-                                var dstCode1 = GetIntFromCode(stack[i + 1]);// as PdfHexString)!.ConvertToInt();
-                                var srcCode = GetIntFromCode(stack[i + 2]);// dh.ConvertToInt();
-                                for (var dst = dstCode0; dst <= dstCode1; dst++)
-                                {
-                                    if (dst >= 0 && dst < 65536)
-                                    {
-                                        mCMap[srcCode] = (Char)dst;
-                                    }
-                                    srcCode++;
-                                }
-                            }
-                            state = CidState.None;
-                            stack.Clear();
-                            break;
-
-                    }
-                }
-            }
+            //        }
+            //    }
+            //}
         }
         private int GetIntFromCode(PdfObject obj)
         {
