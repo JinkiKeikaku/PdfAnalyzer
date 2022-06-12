@@ -141,20 +141,25 @@ namespace PdfUtility
                             {
                                 var srcCode0 = GetIntFromCode(stack[i]);// as PdfHexString)!.ConvertToInt();
                                 var srcCode1 = GetIntFromCode(stack[i + 1]);// as PdfHexString)!.ConvertToInt();
-                                var dstCode = GetIntFromCode(stack[i + 2]);//.ConvertToInt();
-
-                                if (dstCode >= 0 && dstCode < 65536)
+                                var dstArray = stack[i + 2] as PdfArray;
+                                if (dstArray != null)
                                 {
-                                    mCMapDataList.Add(new CmapData(srcCode0, srcCode1, dstCode));
+                                    for(var j = 0; j < dstArray.Count; j++)
+                                    {
+                                        var src = srcCode0 + j;
+                                        var dst = GetIntFromCode(dstArray.GetAt<PdfObject>(j)!);
+                                        mCMapDataList.Add(new CmapData(src, src, dst));
+                                    }
                                 }
-                                //for (var sc = srcCode0; sc <= srcCode1; sc++)
-                                //{
-                                //    if (dstCode >= 0 && dstCode < 65536)
-                                //    {
-                                //        mCMap.Add(sc, (Char)dstCode);
-                                //    }
-                                //    dstCode++;
-                                //}
+                                else
+                                {
+                                    var dstCode = GetIntFromCode(stack[i + 2]);//.ConvertToInt();
+
+                                    if (dstCode >= 0 && dstCode < 65536)
+                                    {
+                                        mCMapDataList.Add(new CmapData(srcCode0, srcCode1, dstCode));
+                                    }
+                                }
                             }
                             state = CidState.None;
                             stack.Clear();
