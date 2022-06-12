@@ -10,7 +10,9 @@ namespace PdfUtility
     class PdfXrefTable
     {
         public Dictionary<int, (long pos, bool valid)> XrefMap { get; } = new();
-        public Dictionary<int, (byte[], int)> XrefStreamMap { get; } = new();
+        public Dictionary<int, (PdfStream, int)> XrefStreamMap { get; } = new();
+
+        private Dictionary<PdfStream, byte[]?> mXrefStreamBufferMap { get; } = new();
 
         public void Clear()
         {
@@ -20,7 +22,7 @@ namespace PdfUtility
 
         public bool ContainsKey(int key)=> XrefMap.ContainsKey(key) || XrefStreamMap.ContainsKey(key);
         internal void Add(int key, (long, bool) value) => XrefMap[key] = value;
-        internal void Add(int key, (byte[] buffer, int pos) streamBuf) => XrefStreamMap[key] = streamBuf;
+        internal void Add(int key, (PdfStream strm, int pos) streamPos) => XrefStreamMap[key] = streamPos;
 
         internal long GetStreamPosition(int key)
         {
@@ -33,7 +35,24 @@ namespace PdfUtility
         internal (byte[]?, int) GetObjectStreamBuffer(int key)
         {
             if (!XrefStreamMap.ContainsKey(key)) return (null, -1);
-            return XrefStreamMap[key];
+            var s = XrefStreamMap[key];
+            var ps = s.Item1; 
+            byte[]? eb;
+            if (mXrefStreamBufferMap.ContainsKey(ps))
+            {
+                eb = mXrefStreamBufferMap[ps];
+            }
+            else
+            {
+                eb = ps.GetExtractedBytes();
+                mXrefStreamBufferMap[ps] = eb;
+            }
+            if (eb == null) return (null, -1);
+ //           int n = ps.Dictionary.GetInt("/N");
+            int first = ps.Dictionary.GetInt("/First");
+            var ss = Encoding.ASCII.GetString(eb[0..first]).Split();
+            var px = int.Parse(ss[s.Item2 * 2 + 1]) + first;
+            return (eb, px);
         }
     }
 }

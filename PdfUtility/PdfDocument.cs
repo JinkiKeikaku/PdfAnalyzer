@@ -95,10 +95,7 @@ namespace PdfUtility
             XrefTable.Clear();
         }
 
-        public void Dispose()
-        {
-            Close();
-        }
+        public void Dispose() => Close();
 
         /// <summary>
         /// Xrefテーブルから見つかったオブジェクトのリストを返します。
@@ -540,40 +537,25 @@ namespace PdfUtility
                 index++;
             }
             //typeが2の時を調べる(圧縮)。
+            index = 0;
             for (int i = 0; i < buf.Length; i += n0)
             {
                 if (buf[i + n1 - 1] == 2)//Type == 2
                 {
                     var objectNumber = ConvertInt(buf, i + n1, n2);
+                    var objectIndex = ConvertInt(buf, i + n1+n2, n3);
                     var ps = parser.GetObject(objectNumber) as PdfStream ??
                         throw new Exception("cannnot find xref indirect stream.");
-                    var eb = ps.GetExtractedBytes() ??
-                        throw new Exception("cannnot extract xref object stream.");
-                    if (ps.Dictionary.GetValue<PdfName>("/Type")?.Name != "/ObjStm")
+                    var idx = indexList.Count == 0 ? index : indexList[index];
+                    if (!XrefTable.ContainsKey(idx))
                     {
-                        throw new Exception("stream is not object stream.");
-                    }
-                    int n = ps.Dictionary.GetInt("/N");
-                    int first = ps.Dictionary.GetInt("/First");
-                    //var bufPos = new (int, int)[n];
-                    //var tmp = Encoding.ASCII.GetString(eb);
-                    //Debug.WriteLine(tmp);
-                    var ss = Encoding.ASCII.GetString(eb[0..first]).Split();
-                    for (var i0 = 0; i0 < n; i0++)
-                    {
-                        index = int.Parse(ss[i0 * 2]);
-                        var px = int.Parse(ss[i0 * 2 + 1]) + first;
-                        if (!XrefTable.ContainsKey(index))
-                        {
-                            XrefTable.Add(index, (eb, px));
-                        }
+                        XrefTable.Add(idx, (ps, objectIndex));
                     }
                 }
+                index++;
             }
             return pdfStream.Dictionary;
         }
-
-
 
         private int ConvertInt(byte[] buf, int pos, int size)
         {

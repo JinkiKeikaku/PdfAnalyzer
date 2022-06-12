@@ -147,8 +147,11 @@ namespace PdfUtility
                                     for(var j = 0; j < dstArray.Count; j++)
                                     {
                                         var src = srcCode0 + j;
-                                        var dst = GetIntFromCode(dstArray.GetAt<PdfObject>(j)!);
-                                        mCMapDataList.Add(new CmapData(src, src, dst));
+                                        var dstCode = GetIntFromCode(dstArray.GetAt<PdfObject>(j)!);
+                                        if (dstCode >= 0 && dstCode < 65536)
+                                        {
+                                            mCMapDataList.Add(new CmapData(src, src, dstCode));
+                                        }
                                     }
                                 }
                                 else
