@@ -48,32 +48,12 @@ namespace PdfUtility
                 Kind = kind;
                 mBytes = new byte[] { (byte)c };
             }
-
             public string GetString() => Encoding.ASCII.GetString(mBytes);
             public double GetDouble() => double.Parse(GetString());
             public int GetInt() => int.Parse(GetString());
-
             public override string ToString() => $"{Kind}::{GetString()}";
-
             public static readonly Token EofToken = new Token(TokenKind.Eof, Array.Empty<byte>());
         }
-
-
-        bool[] mWhiteSpaceCharTable = new bool[256];
-        bool[] mDelimiterCharTable = new bool[256];
-        bool[] mHexCharTable = new bool[256];
-        bool[] mFirstNumberCharTable = new bool[256];
-        bool[] mNumberCharTable = new bool[256];
-
-        readonly byte[] mStreamAsciiChars;// = new byte[] { 115, 116, 114, 101, 97, 109 };// Encoding.ASCII.GetBytes("stream");
-        readonly byte[] mDictionaryStartChars;// = new byte[] { 60, 60 };   //<<
-        readonly byte[] mDictionaryEndChars;// = new byte[] { 62, 62 };     //>>
-
-        bool IsWhiteSpace(int c) => mWhiteSpaceCharTable[c];
-        bool IsDelimiter(int c) => mDelimiterCharTable[c];
-        bool IsHex(int c) => mHexCharTable[c];
-        bool IsFirstNumber(int c) => mFirstNumberCharTable[c];
-        bool IsNumber(int c) => mNumberCharTable[c];
 
         public Token CurrentToken = new();
         public long StreamLength => mStream.Length;
@@ -98,23 +78,11 @@ namespace PdfUtility
         public PdfTokenizer(Stream r)
         {
             mStream = r;
-            foreach (var c in "\0\t\r\n\b\f ") mWhiteSpaceCharTable[c] = true;
-            foreach (var c in "()<>[]{}/%") mDelimiterCharTable[c] = true;
-            foreach (var c in "0123456789abcdefABCDEF") mHexCharTable[c] = true;
-            foreach (var c in "+-.0123456789") mFirstNumberCharTable[c] = true;
-            foreach (var c in ".0123456789") mNumberCharTable[c] = true;
-
-            mStreamAsciiChars = Encoding.ASCII.GetBytes("stream");
-            mDictionaryStartChars = Encoding.ASCII.GetBytes("<<");
-            mDictionaryEndChars = Encoding.ASCII.GetBytes(">>");
         }
 
         void Back()
         {
-
-//            if (StreamPosition < StreamLength) {
-                StreamPosition--;
-//            }
+            StreamPosition--;
         }
 
         int GetChar()
@@ -128,36 +96,34 @@ namespace PdfUtility
             return c;
         }
 
-        bool Skip()
+        public bool Skip()
         {
-            while (IsWhiteSpace(mChar))
+            //空白文字スキップ
+
+            while (true)
             {
-                if (GetChar() < 0)
-                {
-                    return false;
-                }
+                if (GetChar() < 0) return false;
+                if (!IsWhiteSpace(mChar)) break;
             }
+            //コメントスキップ
             if (mChar == '%')
             {
-                while (mChar != '\n' && mChar != '\r')
+                while (true)
                 {
-                    if (GetChar() < 0)
-                    {
-                        return false;
-                    }
+                    if (GetChar() < 0) return false;
+                    if (mChar == '\n' || mChar == '\r') break;
                 }
-                return Skip();
+                return Skip();//コメント行が終わった後もスキップ出来ればスキップ
             }
+            Back();
             return true;
         }
-
-
         public bool IsNextTokenStream()
         {
             var pos = StreamPosition;
-            if (GetChar() < 0) return false;
-            Skip();
-            StreamPosition--;
+//            if (GetChar() < 0) return false;
+            if(!Skip()) return false;
+//            StreamPosition--;
             var buf2 = new byte[mStreamAsciiChars.Length];
             mStream.Read(buf2, 0, buf2.Length);
             if (mStreamAsciiChars.SequenceEqual(buf2))
@@ -186,22 +152,19 @@ namespace PdfUtility
         public Token GetNextToken()
         {
             if (mTokenStack.Count > 0) return mTokenStack.Pop();
-            //            var sb = new StringBuilder();
             var bb = new List<byte>();
             while (true)
             {
-                if (GetChar() < 0 || !Skip()) return CurrentToken;
+                if(!Skip()) return CurrentToken;
+                if (GetChar() < 0) return CurrentToken;
                 switch (mChar)
                 {
                     case '(':
                         {
-                            //                            var esc = false;
                             var parCount = 1;
                             while (true)
                             {
                                 if (GetChar() < 0) throw new Exception("Unexpected eof");
-                                //if (!esc)
-                                //{
                                 if (mChar == ')')
                                 {
                                     parCount--;
@@ -216,14 +179,14 @@ namespace PdfUtility
                                 {
                                     //エスケープシーケンス
                                     if (GetChar() < 0) throw new Exception("Unexpected eof");
-                                    if (char.IsDigit((char)mChar))
+                                    if (IsDigit(mChar))
                                     {
                                         var sbNumber = new StringBuilder();
                                         sbNumber.Append((char)mChar);
                                         for (var i = 0; i < 2; i++)
                                         {
                                             if (GetChar() < 0) throw new Exception("Unexpected eof");
-                                            if (!char.IsDigit((char)mChar)) break;
+                                            if (!IsDigit(mChar)) break;
                                             sbNumber.Append((char)mChar);
                                         }
                                         if (sbNumber.Length != 3) Back();
@@ -252,9 +215,11 @@ namespace PdfUtility
                             CurrentToken = new Token(TokenKind.StartDictionary, mDictionaryStartChars);
                             return CurrentToken;
                         }
+                        Back();
                         while (true)
                         {
                             if (!Skip()) throw new Exception("Unexpected eof in hex string.");
+                            if (GetChar() < 0) throw new Exception("Unexpected eof");
                             if (mChar == '>')
                             {
                                 if ((bb.Count & 1) != 0) bb.Add(48);//必ず偶数で奇数の場合は最後に0を付ける。
@@ -263,7 +228,6 @@ namespace PdfUtility
                                 return CurrentToken;
                             }
                             if (IsHex(mChar)) bb.Add((byte)mChar);
-                            if (GetChar() < 0) throw new Exception("Unexpected eof");
                         }
                     case '>':
                         if (GetChar() < 0) throw new Exception("Unexpected eof");
@@ -282,8 +246,8 @@ namespace PdfUtility
                             if (GetChar() < 0 || IsWhiteSpace(mChar) || IsDelimiter(mChar))
                             {
 
-                                var aa = Encoding.ASCII.GetString(bb.ToArray())!;
-                                if(!CurrentToken.IsEof) Back();
+//                                var aa = Encoding.ASCII.GetString(bb.ToArray())!;
+                                if (!CurrentToken.IsEof) Back();
                                 CurrentToken = new Token(TokenKind.Name, bb.ToArray());
                                 bb.Clear();
                                 return CurrentToken;
@@ -297,7 +261,7 @@ namespace PdfUtility
                         CurrentToken = new Token(TokenKind.EndArray, ']');
                         return CurrentToken;
                     default:
-                        if (char.IsLetter((char)mChar))
+                        if (IsLetter(mChar))
                         {
                             bb.Add((byte)mChar);
                             while (true)
@@ -305,7 +269,6 @@ namespace PdfUtility
                                 if (GetChar() < 0 ||
                                     (IsDelimiter(mChar) || IsWhiteSpace(mChar)))
                                 {
-
                                     if (!CurrentToken.IsEof) Back();
                                     var s = bb.ToArray();
                                     bb.Clear();
@@ -347,5 +310,65 @@ namespace PdfUtility
             mStream.Read(bytes, 0, length);
             return bytes;
         }
+
+        private const int whiteSpaceFlag = 1;
+        private const int delimiterFlag = 2;
+        private const int hexCharFlag = 4;
+        private const int firstNumberFlag = 8;
+        private const int numberFlag = 16;
+        private const int digitFlag = 32;
+        private const int letterFlag = 64;
+        private static int[]? mCharFlags = null;
+        private static readonly byte[] mStreamAsciiChars = 
+            new byte[] { 115, 116, 114, 101, 97, 109 };// "stream"
+        private static readonly byte[] mDictionaryStartChars = 
+            new byte[] { 60, 60 };   //"<<"
+
+        private static int[] CharFlags {
+            get
+            {
+                if (mCharFlags == null)
+                {
+                    mCharFlags = new int[256];
+                    foreach (var c in "\u0000\t\r\n\b\u000c ")
+                    {
+                        mCharFlags[c] |= whiteSpaceFlag;
+                    }
+                    foreach (var c in "0123456789abcdefABCDEF")
+                    {
+                        mCharFlags[c] |= hexCharFlag;
+                        }
+                    foreach (var c in "()<>[]{}/%")
+                    {
+                        mCharFlags[c] |= delimiterFlag;
+                        }
+                    foreach (var c in "+-.0123456789")
+                    {
+                        mCharFlags[c] |= firstNumberFlag;
+                        }
+                    foreach (var c in ".0123456789")
+                    {
+                        mCharFlags[c] |= numberFlag;
+                        }
+                    foreach (var c in "0123456789")
+                    {
+                        mCharFlags[c] |= digitFlag;
+                        }
+                    foreach (var c in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+                    {
+                        mCharFlags[c] |= letterFlag;
+                        }
+                }
+                return mCharFlags;
+            }
+        }
+
+        private static bool IsWhiteSpace(int c) => (CharFlags[c] & whiteSpaceFlag) != 0;
+        private static bool IsDelimiter(int c) => (CharFlags[c] & delimiterFlag) != 0;
+        private static bool IsHex(int c) => (CharFlags[c] & hexCharFlag) != 0;
+        private static bool IsNumber(int c) => (CharFlags[c] & numberFlag) != 0;
+        private static bool IsFirstNumber(int c) => (CharFlags[c] & firstNumberFlag) != 0;
+        private static bool IsDigit(int c) => (CharFlags[c] & digitFlag) != 0;
+        private static bool IsLetter(int c) => (CharFlags[c] & letterFlag) != 0;
     }
 }

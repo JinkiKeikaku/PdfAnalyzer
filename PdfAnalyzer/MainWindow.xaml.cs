@@ -74,7 +74,7 @@ namespace PdfAnalyzer
             }
             catch (Exception e)
             {
-                Utility.ShowErrorMessage(e.Message);
+                Utility.ShowErrorMessage(e.ToString());
             }
         }
 

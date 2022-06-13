@@ -10,19 +10,35 @@ namespace PdfUtility
     class PdfXrefTable
     {
         public Dictionary<int, (long pos, bool valid)> XrefMap { get; } = new();
-        public Dictionary<int, (PdfStream, int)> XrefStreamMap { get; } = new();
+        public Dictionary<int, (int streamObjectNumber, int offset)> XrefStreamMap { get; } = new();
 
-        private Dictionary<PdfStream, byte[]?> mXrefStreamBufferMap { get; } = new();
+        private Dictionary<int, (PdfStream stream, byte[]? buffer)> mObjectNumberToStreamMap = new();
+
+        //        private Dictionary<PdfStream, byte[]?> mXrefStreamBufferMap { get; } = new();
 
         public void Clear()
         {
             XrefMap.Clear();
             XrefStreamMap.Clear();
+            mObjectNumberToStreamMap.Clear();
         }
 
-        public bool ContainsKey(int key)=> XrefMap.ContainsKey(key) || XrefStreamMap.ContainsKey(key);
+        public bool ContainsKey(int key) => XrefMap.ContainsKey(key) || XrefStreamMap.ContainsKey(key);
+        internal bool ContainXrefStreamObject(int objectNumber)
+        {
+            return mObjectNumberToStreamMap.ContainsKey(objectNumber);
+        }
+
         internal void Add(int key, (long, bool) value) => XrefMap[key] = value;
-        internal void Add(int key, (PdfStream strm, int pos) streamPos) => XrefStreamMap[key] = streamPos;
+
+        internal void Add(int objectNumber, PdfStream pdfStream)
+        {
+            mObjectNumberToStreamMap[objectNumber] = (pdfStream, null);
+        }
+        internal void Add(int key, int objectNumber, int offset)
+        {
+            XrefStreamMap[key] = (objectNumber, offset);
+        }
 
         internal long GetStreamPosition(int key)
         {
@@ -36,19 +52,15 @@ namespace PdfUtility
         {
             if (!XrefStreamMap.ContainsKey(key)) return (null, -1);
             var s = XrefStreamMap[key];
-            var ps = s.Item1; 
-            byte[]? eb;
-            if (mXrefStreamBufferMap.ContainsKey(ps))
-            {
-                eb = mXrefStreamBufferMap[ps];
-            }
-            else
+            if (!mObjectNumberToStreamMap.ContainsKey(s.streamObjectNumber)) return (null, -1);
+            var ps = mObjectNumberToStreamMap[s.streamObjectNumber].stream;
+            var eb = mObjectNumberToStreamMap[s.streamObjectNumber].buffer;
+            if (eb == null)
             {
                 eb = ps.GetExtractedBytes();
-                mXrefStreamBufferMap[ps] = eb;
+                mObjectNumberToStreamMap[s.streamObjectNumber] = (ps, eb);
             }
             if (eb == null) return (null, -1);
- //           int n = ps.Dictionary.GetInt("/N");
             int first = ps.Dictionary.GetInt("/First");
             var ss = Encoding.ASCII.GetString(eb[0..first]).Split();
             var px = int.Parse(ss[s.Item2 * 2 + 1]) + first;

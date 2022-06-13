@@ -134,12 +134,12 @@ namespace PdfUtility
             var ret = new List<PdfObject>();
             using var ms = new MemoryStream(contents);
             var parser = new PdfParser(ms, XrefTable);
-//            if (parser == null) throw new Exception("Cannot create graohics parser.");
+            //            if (parser == null) throw new Exception("Cannot create graohics parser.");
             while (true)
             {
                 var obj = parser.ParseObject();
                 if (obj == null) break;
-//                Debug.WriteLine(obj.ToString());
+                //                Debug.WriteLine(obj.ToString());
                 ret.Add(obj);
                 if (obj is PdfIdentifier)
                 {
@@ -392,9 +392,9 @@ namespace PdfUtility
         private void GetPageAttribute(PdfDictionary pdfDic, PdfPageAttribute pageAttribute)
         {
             var mediaBox = GetRectFromPage(pdfDic, "/MediaBox", true);
-            if(mediaBox != null) pageAttribute.MediaBox = mediaBox;
+            if (mediaBox != null) pageAttribute.MediaBox = mediaBox;
             var cropBox = GetRectFromPage(pdfDic, "/CropBox", true);
-            if(cropBox != null) pageAttribute.CropBox = cropBox;
+            if (cropBox != null) pageAttribute.CropBox = cropBox;
             var rotate = GetNumberFromPage(pdfDic, "/Rotate", true);
             if (rotate != null) pageAttribute.Rotate = rotate.IntValue;
         }
@@ -454,6 +454,16 @@ namespace PdfUtility
 
         private bool ParseXRef(Stream stream)
         {
+            long GetPos(byte[] bytes)
+            {
+                var c = 0L;
+                for (var i = 0; i < 10; i++)
+                {
+                    c = c * 10 + ((bytes[i] - '0') & 255);
+                }
+                return c;
+            }
+
             //xref
             //0 1
             //00000000000 65535 f
@@ -481,8 +491,19 @@ namespace PdfUtility
                 if (t2.Kind != TokenKind.Number) throw new Exception("Cannot find xref numbers");
                 var start = t1.GetInt();
                 var n = t2.GetInt();
+                tokenizer.Skip();
+                var bytes = new byte[20];
                 for (var i = 0; i < n; i++)
                 {
+                    stream.Read(bytes, 0, 20);
+                    var pos = GetPos(bytes);
+                    var c = (char)bytes[17];
+                    if (!XrefTable.ContainsKey(i + start))
+                    {
+                        XrefTable.Add(i + start, (pos, c == 'n'));
+                    }
+
+/*
                     t1 = tokenizer.GetNextToken();
                     tokenizer.GetNextToken();
                     t2 = tokenizer.GetNextToken();
@@ -491,6 +512,7 @@ namespace PdfUtility
                     {
                         XrefTable.Add(i + start, (long.Parse(t1.GetString()), t2.GetString() == "n"));
                     }
+*/
                 }
             }
         }
@@ -543,13 +565,19 @@ namespace PdfUtility
                 if (buf[i + n1 - 1] == 2)//Type == 2
                 {
                     var objectNumber = ConvertInt(buf, i + n1, n2);
-                    var objectIndex = ConvertInt(buf, i + n1+n2, n3);
-                    var ps = parser.GetObject(objectNumber) as PdfStream ??
-                        throw new Exception("cannnot find xref indirect stream.");
+                    var objectIndex = ConvertInt(buf, i + n1 + n2, n3);
+                    //var ps = parser.GetObject(objectNumber) as PdfStream ??
+                    //    throw new Exception("cannnot find xref indirect stream.");
                     var idx = indexList.Count == 0 ? index : indexList[index];
                     if (!XrefTable.ContainsKey(idx))
                     {
-                        XrefTable.Add(idx, (ps, objectIndex));
+                        XrefTable.Add(idx, objectNumber, objectIndex);
+                        if (!XrefTable.ContainXrefStreamObject(objectNumber))
+                        {
+                            var ps = parser.GetObject(objectNumber) as PdfStream ??
+                                throw new Exception("cannnot find xref indirect stream.");
+                            XrefTable.Add(objectNumber, ps);
+                        }
                     }
                 }
                 index++;
