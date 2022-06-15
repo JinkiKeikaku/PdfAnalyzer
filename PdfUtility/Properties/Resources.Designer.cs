@@ -61,6 +61,28 @@ namespace PdfUtility.Properties {
         }
         
         /// <summary>
+        ///   # EquivalentUnifiedIdeograph-14.0.0.txt
+        ///# Date: 2021-03-16, 21:41:00 GMT [KL, KW]
+        ///# © 2021 Unicode®, Inc.
+        ///# Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+        ///# For terms of use, see http://www.unicode.org/terms_of_use.html
+        ///#
+        ///# For documentation, see UAX #44: Unicode Character Database,
+        ///# at http://www.unicode.org/reports/tr44/
+        ///#
+        ///# This file defines the following property:
+        ///#
+        ///# Equivalent_Unified_Ideograph
+        ///#
+        ///# This data file lists CJK radicals and CJK str [残りの文字列は切り詰められました]&quot;; に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string EquivalentUnifiedIdeograph {
+            get {
+                return ResourceManager.GetString("EquivalentUnifiedIdeograph", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   型 System.Byte[] のローカライズされたリソースを検索します。
         /// </summary>
         internal static byte[] UniJIS2004_UTF16_H {
