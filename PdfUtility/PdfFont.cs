@@ -101,7 +101,7 @@ namespace PdfUtility
         {
             var typ = FontDict.GetValue<PdfName>("/Subtype");
             if (typ?.Name == "/Type1") return ConvertAnsiEncoding(bytes);
-            if (typ?.Name == "/TrueType") return ConvertAnsiEncoding(bytes);
+//            if (typ?.Name == "/TrueType") return ConvertAnsiEncoding(bytes);
             var encoding = FontDict.GetValue<PdfName>("/Encoding");
             switch (encoding?.Name)
             {
