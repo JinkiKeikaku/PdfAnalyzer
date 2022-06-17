@@ -160,21 +160,21 @@ namespace PdfUtility
         }
 
         /// <summary>
-        /// インデックスで指定されるページオブジェクトを返します。
-        /// インデックスは0から始まり1ページ目が0です。
+        ///　ページ番号で指定されるページオブジェクトを返します。
+        /// ページ番号は1から始まり1ページ目が1です。
         /// </summary>
-        /// <param name="pageIndex"></param>
+        /// <param name="pageNumber"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public PdfPage GetPage(int pageIndex)
+        public PdfPage GetPage(int pageNumber)
         {
             var rootPages = GetEntityObject<PdfDictionary>(Root.GetValue("/Pages"));
             if (rootPages == null) throw new Exception("Root pages is null. maybe document is not open.");
 
             var pageAttribute = new PdfPageAttribute();
 
-            var pageDic = GetPageDictionary(rootPages, pageAttribute, pageIndex);
-            if (pageDic == null) throw new Exception($"cannot find page {pageIndex}");
+            var pageDic = GetPageDictionary(rootPages, pageAttribute, pageNumber-1);
+            if (pageDic == null) throw new Exception($"cannot find page number {pageNumber}");
             var contents = GetEntityObject(pageDic.GetValue("/Contents"));
             PdfArray contentsArray = new();
             if (contents is PdfStream pdfStream)
@@ -210,7 +210,7 @@ namespace PdfUtility
         /// /Pageを取得します。
         /// </summary>
         /// <param name="pages"></param>
-        /// <param name="pageIndex">0から始まるページのインデックス。１ページ目が0になる。</param>
+        /// <param name="pageIndex">0から始まるページのインデックス。１ページ目が0になる。１から始まるページ番号と違ううので注意。</param>
         /// <returns>ページのディクショナリを返す。無ければnull。</returns>
         /// <exception cref="Exception"></exception>
         public PdfDictionary? GetPageDictionary(PdfDictionary pages, PdfPageAttribute pageAttribute, int pageIndex)
