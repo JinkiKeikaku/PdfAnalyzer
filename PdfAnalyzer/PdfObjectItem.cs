@@ -77,7 +77,7 @@ namespace PdfAnalyzer
     class PdfXrefListItem : PdfObjectItem
     {
         public PdfXrefList XrefList { get; }
-        public PdfXrefListItem(PdfXrefList xrefList) : base(xrefList, "Xrefs","", $"Count={xrefList.Count}")
+        public PdfXrefListItem(PdfXrefList xrefList) : base(xrefList, "Xrefs","Object table", $"Count={xrefList.Count}")
         {
             XrefList = xrefList;
         }

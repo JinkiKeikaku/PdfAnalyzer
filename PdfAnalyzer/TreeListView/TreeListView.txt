@@ -1,6 +1,0 @@
-﻿    
-    TreeLIstView
-    - https://www.codeproject.com/Articles/24973/TreeListView
-    - License CPOL https://www.codeproject.com/info/cpol10.aspx
-
-

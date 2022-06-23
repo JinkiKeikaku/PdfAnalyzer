@@ -26,9 +26,13 @@ namespace PdfAnalyzer
             }
             InitializeComponent();
             DataContext = this;
+            Part_Tree.Model = Model;
+            Title = $"{Properties.Resources.AppName} {GetAppVersion()}";
         }
 
-        public ObservableCollection<TreeItem> Datas { get; } = new();
+        public PdfModel Model {get; } = new();
+
+//        public ObservableCollection<TreeItem> Datas { get; } = new();
 
         private void Menu_Exit_Click(object sender, RoutedEventArgs e) => Close();
 
@@ -50,27 +54,29 @@ namespace PdfAnalyzer
         {
             try
             {
-                Datas.Clear();
+                Model.Datas.Clear();
                 
                 using var doc = new PdfDocument();
                 doc.Open(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read));
                 //Treeを作成。
-                Datas.Add(new TreeItem("File name", "", path));
-                Datas.Add(new TreeItem("Pdf Version", "", doc.PdfVerson));
+                var root = new TreeItem("File", "", path);
+                Model.Datas.Add(root);
+                root.Children.Add(new TreeItem("Pdf Version", "", doc.PdfVerson));
                 if (doc.IsEncrypt())
                 {
-                    Datas.Add(new TreeItem("The stream is encrypted.", "", ""));
+                    root.Children.Add(new TreeItem("The stream is encrypted.", "", ""));
                 }
                 var traliler = PdfAnalyzeHelper.CreateItem(doc.Trailer!, "Trailer");
-                Datas.Add(PdfAnalyzeHelper.MakeNode(traliler));
-                var root = doc.Root;
-                if (root == null) throw new Exception("Cannot get root dictionary.");
-                var rootItem = PdfAnalyzeHelper.CreateItem(root, "/Root");
-                Datas.Add(PdfAnalyzeHelper.MakeNode(rootItem));
+                root.Children.Add(PdfAnalyzeHelper.MakeNode(traliler));
+                var pdfRoot = doc.Root;
+                if (pdfRoot == null) throw new Exception("Cannot get root dictionary.");
+                var rootItem = PdfAnalyzeHelper.CreateItem(pdfRoot, "/Root");
+                root.Children.Add(PdfAnalyzeHelper.MakeNode(rootItem));
                 var xrefs = doc.GetXrefObjects();
                 var xrefItem = new PdfXrefListItem(new PdfXrefList(xrefs));
-                Datas.Add(PdfAnalyzeHelper.MakeNode(xrefItem));
+                root.Children.Add(PdfAnalyzeHelper.MakeNode(xrefItem));
                 doc.Close();
+                Part_Tree.Nodes[0].IsExpanded = true;
             }
             catch (Exception e)
             {
@@ -81,9 +87,16 @@ namespace PdfAnalyzer
         //ダブルクリックの処理
         private void Part_Tree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            var selectedNode = Part_Tree.SelectedNode;
+            if (selectedNode == null) return;
+            if (selectedNode.IsExpandable== true)
+            {
+                selectedNode.IsExpanded = !Part_Tree.SelectedNode.IsExpanded;
+                return;
+            }
             //ストリームデータは開く。
-            if (Part_Tree.SelectedItem is PdfStreamDataItem s) PdfAnalyzeHelper.OpenStreamData(s, PdfAnalyzeHelper.OpenType.Auto);
-            if (Part_Tree.SelectedItem is not PdfObjectItem item) return;
+            if (selectedNode.Tag is PdfStreamDataItem s) PdfAnalyzeHelper.OpenStreamData(s, PdfAnalyzeHelper.OpenType.Auto);
+            if (selectedNode.Tag is not PdfObjectItem item) return;
             //参照は対応するXrefを選択する。
             if (item.PdfObject is PdfReference r) PdfAnalyzeHelper.SelectXrefObject(Part_Tree, r);
         }
@@ -115,7 +128,6 @@ namespace PdfAnalyzer
                 e.Effects = System.Windows.DragDropEffects.None;
                 if (e.Data.GetData(System.Windows.DataFormats.FileDrop) is string[] files)
                 {
-                    // TODO Check acceptable.
                     {
                         e.Effects = System.Windows.DragDropEffects.Copy;
                         e.Handled = true;
@@ -154,7 +166,6 @@ namespace PdfAnalyzer
             settings.WindowTop = Top;
             settings.WindowWidth = Width;
             settings.WindowHeight = Height;
-
             //var sb = new StringBuilder();
             //foreach (var t in Part_Tree.Columns)
             //{
@@ -195,6 +206,16 @@ namespace PdfAnalyzer
             //        }
             //    }
             //}
+        }
+
+
+        private static string GetAppVersion()
+        {
+            var asm = System.Reflection.Assembly.GetExecutingAssembly();
+            //バージョンの取得
+            var v = asm?.GetName()?.Version;
+            if (v == null) return "";
+            return $"{v.Major}.{v.Minor}.{v.Build}";
         }
 
     }

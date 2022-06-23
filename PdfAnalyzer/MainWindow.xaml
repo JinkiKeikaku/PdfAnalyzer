@@ -4,17 +4,17 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:PdfAnalyzer"
-    xmlns:tlv="clr-namespace:PdfAnalyzer.TreeListView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tree="clr-namespace:Aga.Controls.Tree;assembly=Aga.Controls"
     Title="PdfAnalyzer"
-    Icon="/Icon/PdfAnalyzerIcon.png"
-    Loaded="Window_Loaded"
-    Closing="Window_Closing"
-    AllowDrop="True"
-    Drop="Window_Drop"
-    PreviewDragOver="Window_PreviewDragOver"
     Width="1000"
     Height="600"
+    AllowDrop="True"
+    Closing="Window_Closing"
+    Drop="Window_Drop"
+    Icon="/Icon/PdfAnalyzerIcon.png"
+    Loaded="Window_Loaded"
+    PreviewDragOver="Window_PreviewDragOver"
     mc:Ignorable="d">
     <Grid>
         <Grid.RowDefinitions>
@@ -34,12 +34,12 @@
                     x:Name="Menu_Open"
                     Click="Menu_Open_Click"
                     Header="Open" />
-                <Separator/>
+                <Separator />
                 <MenuItem
                     x:Name="Menu_Settings"
                     Click="Menu_Settings_Click"
                     Header="Settings" />
-                <Separator/>
+                <Separator />
                 <MenuItem
                     x:Name="Menu_Exit"
                     Click="Menu_Exit_Click"
@@ -47,10 +47,42 @@
             </MenuItem>
         </Menu>
 
+        <tree:TreeList x:Name="Part_Tree" Grid.Row="1"
+                       MouseRightButtonUp="Part_Tree_MouseRightButtonUp"
+                       MouseDoubleClick="Part_Tree_MouseDoubleClick">
+            <tree:TreeList.View>
+                <GridView>
+                    <GridView.Columns>
+                        <GridViewColumn Width="200" Header="Name">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <tree:RowExpander />
+                                        <TextBlock Text="{Binding Name}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+
+                        <GridViewColumn
+                            Width="100"
+                            DisplayMemberBinding="{Binding TypeName}"
+                            Header="Type" />
+                        <GridViewColumn
+                            Width="200"
+                            DisplayMemberBinding="{Binding Information}"
+                            Header="Information" />
+
+                    </GridView.Columns>
+                </GridView>
+            </tree:TreeList.View>
 
 
 
-        <TreeView
+        </tree:TreeList>
+
+
+        <!--<TreeView
             x:Name="Part_Tree"
             Grid.Row="1"
             VirtualizingPanel.IsVirtualizing="True"
@@ -58,41 +90,14 @@
             MouseRightButtonUp="Part_Tree_MouseRightButtonUp"
             MouseDoubleClick="Part_Tree_MouseDoubleClick"
             >
-            
+
             <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate 
+                <HierarchicalDataTemplate
                     ItemsSource="{Binding Children}" >
                     <TextBlock Text="{Binding }"/>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
 
-            <!--<TreeView.Columns>
-                <GridViewColumn Width="200" Header="Name">
-                    <GridViewColumn.CellTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <tlv:TreeListViewExpander />
-                                <TextBlock Text="{Binding Name}" 
-                                           />
-                            </StackPanel>
-                        </DataTemplate>
-                    </GridViewColumn.CellTemplate>
-                </GridViewColumn>
-                <GridViewColumn Width="200" Header="Information">
-                    <GridViewColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Information}" />
-                        </DataTemplate>
-                    </GridViewColumn.CellTemplate>
-                </GridViewColumn>
-                <GridViewColumn Width="100" Header="Type">
-                    <GridViewColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding TypeName}" />
-                        </DataTemplate>
-                    </GridViewColumn.CellTemplate>
-                </GridViewColumn>
-            </TreeView.Columns>-->
-        </TreeView>
+        </TreeView>-->
     </Grid>
 </Window>

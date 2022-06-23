@@ -1,4 +1,4 @@
-﻿using PdfAnalyzer.TreeListView;
+﻿using Aga.Controls.Tree;
 using PdfUtility;
 using System;
 using System.Diagnostics;
@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -195,24 +196,27 @@ namespace PdfAnalyzer
         /// <summary>
         /// 参照されたXrefオブジェクトのTreeListViewのアイテムを選択する。
         /// </summary>
-        public static void SelectXrefObject(TreeView treeView, PdfReference r)
+        public static void SelectXrefObject(TreeList treeView, PdfReference r)
         {
-            var x = VisualTreeExt.GetDescendants<TreeViewItem>(treeView).FirstOrDefault(tvi =>
-            {
-                return tvi.DataContext is PdfXrefListItem;
-            });
-            if (x?.DataContext is not PdfXrefListItem px) return;
-            x.IsExpanded = true;
+            var nodeXrefList = treeView.Nodes[0].Nodes.FirstOrDefault(x => x.Tag is PdfXrefListItem);
+            if (nodeXrefList?.Tag is not PdfXrefListItem px) return;
+            nodeXrefList.IsExpanded = true;
             int n = px.XrefList.Count;
             for (var i = 0; i < n; i++)
             {
                 if (px.XrefList[i].ObjectNumber == r.ObjectNumber)
                 {
-                    x = VisualTreeExt.GetDescendants<TreeViewItem>(treeView).FirstOrDefault(tvi =>
+                    var x = nodeXrefList.Nodes.FirstOrDefault(x => x.Tag is PdfObjectItem pi && pi.PdfObject == px.XrefList[i].Obj);
+                    if (x != null)
                     {
-                        return tvi.DataContext is PdfObjectItem pi && pi.PdfObject == px.XrefList[i].Obj;
-                    });
-                    if (x != null) x.IsSelected = true;
+                        var a = treeView.Items.IndexOf(x);
+                        x.IsExpanded = true;
+                        if(a >=0) treeView.SelectedIndex = a;
+                        treeView.ScrollIntoView(x);
+                    }
+
+
+
                 }
             }
         }
@@ -222,10 +226,11 @@ namespace PdfAnalyzer
         /// </summary>
         /// <param name="treeView"></param>
         /// <returns></returns>
-        public static ContextMenu CreateTreeViewContectMenu(TreeView treeView)
+        public static ContextMenu CreateTreeViewContectMenu(TreeList treeView)
         {
             var menu = new ContextMenu();
-            if (treeView.SelectedItem is PdfObjectItem item)
+            var sel = (treeView.SelectedItem as TreeNode)?.Tag;
+            if (sel is PdfObjectItem item)
             {
                 if (item.PdfObject is PdfReference r)
                 {
@@ -238,7 +243,7 @@ namespace PdfAnalyzer
                     menu.Items.Add(m1);
                 }
             }
-            if (treeView.SelectedItem is PdfStreamDataItem s)
+            if (sel is PdfStreamDataItem s)
             {
                 var filter = s.Parent.Dictionary.GetValue<PdfName>("/Filter");
                 var subType = s.Parent.Dictionary.GetValue<PdfName>("/Subtype");
