@@ -60,6 +60,7 @@ namespace PdfAnalyzer
                 
                 using var doc = new PdfDocument();
                 doc.Open(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read));
+
                 //Treeを作成。
                 var rootItem = new TreeItem("File", "", path);
                 Model.Datas.Add(rootItem);
@@ -68,25 +69,29 @@ namespace PdfAnalyzer
                 {
                     rootItem.Children.Add(new TreeItem("The stream is encrypted.", "", ""));
                 }
+
+                //Shortcut
                 var shortcutItem = new PdfShortcutItem("Shortcut");
                 var pdfRoot = doc.Root;
                 if (pdfRoot == null) throw new Exception("Cannot get root dictionary.");
                 var pdfRootItem = PdfAnalyzeHelper.CreateItem(pdfRoot, "/Root");
                 shortcutItem.AddShortcut(pdfRootItem);
+
+                var pages = new PdfPageReferenceListItem("Page list", doc.GetPageReferenceList());
+                shortcutItem.AddShortcut(pages);
                 rootItem.Children.Add(shortcutItem);
 
+                //Trailer
                 var traliler = PdfAnalyzeHelper.CreateItem(doc.Trailer!, "Trailer");
-                //                rootItem.Children.Add(PdfAnalyzeHelper.MakeNode(traliler));
                 rootItem.Children.Add(traliler);
 
+                //Xref list
                 var xrefs = doc.GetXrefObjects();
-//                var xrefItem = new PdfXrefListItem(new PdfXrefList(xrefs));
                 var xrefItem = new PdfXrefListItem(xrefs);
                 rootItem.Children.Add(xrefItem);
 
-                //                rootItem.Children.Add(PdfAnalyzeHelper.MakeNode(xrefItem));
-
                 doc.Close();
+
                 Part_Tree.Nodes[0].IsExpanded = true;
             }
             catch (Exception e)

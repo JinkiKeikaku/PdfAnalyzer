@@ -159,6 +159,36 @@ namespace PdfUtility
             return rootPages?.GetInt("/Count") ?? 0;
         }
 
+        public List<PdfReference> GetPageReferenceList()
+        {
+            var pageList = new List<PdfReference>();
+            var rootPages = GetEntityObject<PdfDictionary>(Root.GetValue("/Pages"));
+            if (rootPages == null) throw new Exception("Root pages is null. maybe document is not open.");
+            GetPageReferenceList(pageList, rootPages);
+            return pageList;
+        }
+
+        private void GetPageReferenceList(List<PdfReference> pageList, PdfDictionary pagesDict)
+        {
+            var kids = pagesDict.GetValue<PdfArray>("/Kids");
+            if (kids == null) throw new Exception("cannot find kids in pages dictionary");
+            for (var i = 0; i < kids.Count; i++)
+            {
+                var kid = kids[i] as PdfReference;
+                if(kid == null) throw new Exception("kid is not reference.");
+                var pd = GetEntityObject<PdfDictionary>(kid) ?? throw new Exception("kid entity is not dictionary.");
+                switch (pd.GetValue<PdfName>("/Type")?.Name)
+                {
+                    case "/Page":
+                        pageList.Add(kid);
+                        break;
+                    case "/Pages":
+                        GetPageReferenceList(pageList, pd);
+                        break;
+                }
+            }
+        }
+
         /// <summary>
         ///　ページ番号で指定されるページオブジェクトを返します。
         /// ページ番号は1から始まり1ページ目が1です。
