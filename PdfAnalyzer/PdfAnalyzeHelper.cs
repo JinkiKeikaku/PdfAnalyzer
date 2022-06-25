@@ -1,4 +1,5 @@
 ﻿using Aga.Controls.Tree;
+using PdfAnalyzer.ListItem;
 using PdfUtility;
 using System;
 using System.Diagnostics;
@@ -34,63 +35,63 @@ namespace PdfAnalyzer
                 PdfDictionary d => new PdfDictionaryItem(d, name),
                 PdfArray a => new PdfArrayItem(a, name),
                 PdfReference r => new PdfReferenceItem(r, name),
+                PdfStream s => new PdfStreamItem(s, name),
                 PdfNumber => new PdfObjectItem(obj, name, "Number", obj?.ToString() ?? ""),
                 PdfName => new PdfObjectItem(obj, name, "Name", obj?.ToString() ?? ""),
                 PdfString => new PdfObjectItem(obj, name, "String", obj?.ToString() ?? ""),
                 PdfHexString => new PdfObjectItem(obj, name, "HexString", obj?.ToString() ?? ""),
-                PdfStream => new PdfObjectItem(obj, name, "Stream", obj?.ToString() ?? ""),
                 _ => new PdfObjectItem(obj, name, "", obj?.ToString() ?? ""),
             };
         }
-        public static PdfObjectItem MakeNode(PdfObjectItem item)
-        {
-            switch (item.PdfObject)
-            {
-                case PdfDictionary dic:
-                    {
-                        foreach (var d in dic)
-                        {
-                            var child = CreateItem(d.Value, d.Key);
-                            item.Children.Add(child);
-                            MakeNode(child);
-                        }
-                    }
-                    break;
-                case PdfArray array:
-                    {
-                        for (var i = 0; i < array.Count; i++)
-                        {
-                            var child = CreateItem(array[i], $"[{i}]");
-                            item.Children.Add(child);
-                            MakeNode(child);
-                        }
-                        break;
-                    }
-                case PdfStream s:
-                    {
-                        var sd = new PdfStreamDataItem(s);
-                        item.Children.Add(sd);
-                        foreach (var d in s.Dictionary)
-                        {
-                            var child = CreateItem(d.Value, d.Key);
-                            item.Children.Add(child);
-                            MakeNode(child);
-                        }
-                    }
-                    break;
-                case PdfXrefList xrefs:
-                    {
-                        for (var i = 0; i < xrefs.Count; i++)
-                        {
-                            var child = CreateItem(xrefs[i].Obj, $"[{xrefs[i].ObjectNumber}]");
-                            item.Children.Add(child);
-                            MakeNode(child);
-                        }
-                    }
-                    break;
-            }
-            return item;
-        }
+        //public static PdfObjectItem MakeNode(PdfObjectItem item)
+        //{
+        //    switch (item.PdfObject)
+        //    {
+        //        case PdfDictionary dic:
+        //            {
+        //                foreach (var d in dic)
+        //                {
+        //                    var child = CreateItem(d.Value, d.Key);
+        //                    item.Children.Add(child);
+        //                    MakeNode(child);
+        //                }
+        //            }
+        //            break;
+        //        case PdfArray array:
+        //            {
+        //                for (var i = 0; i < array.Count; i++)
+        //                {
+        //                    var child = CreateItem(array[i], $"[{i}]");
+        //                    item.Children.Add(child);
+        //                    MakeNode(child);
+        //                }
+        //                break;
+        //            }
+        //        case PdfStream s:
+        //            {
+        //                var sd = new PdfStreamDataItem(s);
+        //                item.Children.Add(sd);
+        //                foreach (var d in s.Dictionary)
+        //                {
+        //                    var child = CreateItem(d.Value, d.Key);
+        //                    item.Children.Add(child);
+        //                    MakeNode(child);
+        //                }
+        //            }
+        //            break;
+        //        case PdfXrefList xrefs:
+        //            {
+        //                for (var i = 0; i < xrefs.Count; i++)
+        //                {
+        //                    var child = CreateItem(xrefs[i].Obj, $"[{xrefs[i].ObjectNumber}]");
+        //                    item.Children.Add(child);
+        //                    MakeNode(child);
+        //                }
+        //            }
+        //            break;
+        //    }
+        //    return item;
+        //}
 
         public static void OpenStreamData(PdfStreamDataItem item, OpenType ot)
         {

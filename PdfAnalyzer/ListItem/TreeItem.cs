@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PdfAnalyzer
+namespace PdfAnalyzer.ListItem
 {
     public class TreeItem
     {

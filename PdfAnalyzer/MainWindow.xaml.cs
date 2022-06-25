@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using PdfAnalyzer.ListItem;
 using PdfUtility;
 using System;
 using System.Collections.ObjectModel;
@@ -6,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace PdfAnalyzer
@@ -32,8 +34,6 @@ namespace PdfAnalyzer
 
         public PdfModel Model {get; } = new();
 
-//        public ObservableCollection<TreeItem> Datas { get; } = new();
-
         private void Menu_Exit_Click(object sender, RoutedEventArgs e) => Close();
 
         private void Menu_Open_Click(object sender, RoutedEventArgs e)
@@ -50,6 +50,8 @@ namespace PdfAnalyzer
             }
         }
 
+        private PdfDocument? mDoc { get; set; } = null;
+
         private void OpenPdf(string path)
         {
             try
@@ -59,22 +61,31 @@ namespace PdfAnalyzer
                 using var doc = new PdfDocument();
                 doc.Open(new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read));
                 //Treeを作成。
-                var root = new TreeItem("File", "", path);
-                Model.Datas.Add(root);
-                root.Children.Add(new TreeItem("Pdf Version", "", doc.PdfVerson));
+                var rootItem = new TreeItem("File", "", path);
+                Model.Datas.Add(rootItem);
+                rootItem.Children.Add(new TreeItem("PDF version", "", doc.PdfVerson));
                 if (doc.IsEncrypt())
                 {
-                    root.Children.Add(new TreeItem("The stream is encrypted.", "", ""));
+                    rootItem.Children.Add(new TreeItem("The stream is encrypted.", "", ""));
                 }
-                var traliler = PdfAnalyzeHelper.CreateItem(doc.Trailer!, "Trailer");
-                root.Children.Add(PdfAnalyzeHelper.MakeNode(traliler));
+                var shortcutItem = new PdfShortcutItem("Shortcut");
                 var pdfRoot = doc.Root;
                 if (pdfRoot == null) throw new Exception("Cannot get root dictionary.");
-                var rootItem = PdfAnalyzeHelper.CreateItem(pdfRoot, "/Root");
-                root.Children.Add(PdfAnalyzeHelper.MakeNode(rootItem));
+                var pdfRootItem = PdfAnalyzeHelper.CreateItem(pdfRoot, "/Root");
+                shortcutItem.AddShortcut(pdfRootItem);
+                rootItem.Children.Add(shortcutItem);
+
+                var traliler = PdfAnalyzeHelper.CreateItem(doc.Trailer!, "Trailer");
+                //                rootItem.Children.Add(PdfAnalyzeHelper.MakeNode(traliler));
+                rootItem.Children.Add(traliler);
+
                 var xrefs = doc.GetXrefObjects();
-                var xrefItem = new PdfXrefListItem(new PdfXrefList(xrefs));
-                root.Children.Add(PdfAnalyzeHelper.MakeNode(xrefItem));
+//                var xrefItem = new PdfXrefListItem(new PdfXrefList(xrefs));
+                var xrefItem = new PdfXrefListItem(xrefs);
+                rootItem.Children.Add(xrefItem);
+
+                //                rootItem.Children.Add(PdfAnalyzeHelper.MakeNode(xrefItem));
+
                 doc.Close();
                 Part_Tree.Nodes[0].IsExpanded = true;
             }

@@ -8,13 +8,18 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Authors>Junkbulk</Authors>
     <Company>Jinki-Keikaku</Company>
     <Copyright>Copyright © 2022 JinkiKeikaku</Copyright>
     <PackageIcon>PdfAnalyzerIcon.png</PackageIcon>
     <ApplicationIcon>Icon\PdfAnalyzerIcon.ico</ApplicationIcon>
 
+  </PropertyGroup>
+
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>none</DebugType>
   </PropertyGroup>
 
 
