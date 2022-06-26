@@ -1,4 +1,5 @@
-﻿using Microsoft.Win32;
+﻿using Aga.Controls.Tree;
+using Microsoft.Win32;
 using PdfAnalyzer.ListItem;
 using PdfUtility;
 using System;
@@ -110,17 +111,27 @@ namespace PdfAnalyzer
                 selectedNode.IsExpanded = !Part_Tree.SelectedNode.IsExpanded;
                 return;
             }
-            //ストリームデータは開く。
-            if (selectedNode.Tag is PdfStreamDataItem s) PdfAnalyzeHelper.OpenStreamData(s, PdfAnalyzeHelper.OpenType.Auto);
-            if (selectedNode.Tag is not PdfObjectItem item) return;
-            //参照は対応するXrefを選択する。
-            if (item.PdfObject is PdfReference r) PdfAnalyzeHelper.SelectXrefObject(Part_Tree, r);
+            if(selectedNode.Tag is TreeItem t) t.Open(Part_Tree);
+
+            ////ストリームデータは開く。
+            //if (selectedNode.Tag is PdfStreamDataItem s) PdfAnalyzeHelper.OpenStreamData(s, PdfAnalyzeHelper.OpenType.Auto);
+            //if (selectedNode.Tag is not PdfObjectItem item) return;
+            ////参照は対応するXrefを選択する。
+            //if (item.PdfObject is PdfReference r) PdfAnalyzeHelper.SelectXrefObject(Part_Tree, r);
         }
 
         //右ボタンUPでコンテキストメニュー
         private void Part_Tree_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
-            var menu = PdfAnalyzeHelper.CreateTreeViewContectMenu(Part_Tree);
+            var menu = new ContextMenu();
+            if ((Part_Tree.SelectedItem as TreeNode)?.Tag is TreeItem sel)
+            {
+                var menuList = sel.CreateMenuItems(Part_Tree);
+                foreach (var m in menuList)
+                {
+                    menu.Items.Add(m);
+                }
+            }
             if (menu.Items.Count > 0) menu.IsOpen = true;
         }
 
