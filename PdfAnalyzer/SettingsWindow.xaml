@@ -4,12 +4,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PdfAnalyzer"
+    xmlns:properties="clr-namespace:PdfAnalyzer.Properties"
         mc:Ignorable="d"
     SizeToContent="WidthAndHeight"
     WindowStartupLocation="CenterOwner"
     WindowStyle="ToolWindow"
         
-        Title="Settings">
+        Title="{x:Static properties:Resources.Settings}">
     <Grid Margin="10,10,10,10">
         <Grid>
             <Grid.RowDefinitions>
@@ -27,31 +28,34 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <Label Grid.Row="0" Grid.Column="0" Content="Text editor"/>
+                <Label Grid.Row="0" Grid.Column="0" Content="{x:Static properties:Resources.TextEditor}"/>
                 <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
-                <TextBox x:Name="Part_TextEditorPath" Width="200" Margin="5"
+                <TextBox x:Name="Part_TextEditorPath" Width="250" Margin="5"
                          Text="{Binding TextEditorPath}"
                          />
                     <Button x:Name="Parts_SelectTextEditorPath" Width="30"  Content="..."
                             Click="Parts_SelectTextEditorPath_Click"
+                            Margin="2"
                             />
                 </StackPanel>
-                <Label Grid.Row="1" Grid.Column="0" Content="Binary editor"/>
+                <Label Grid.Row="1" Grid.Column="0" Content="{x:Static properties:Resources.BinaryEditor}"/>
                 <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal">
-                    <TextBox x:Name="Part_BinaryEditorPath" Width="200" Margin="5"
+                    <TextBox x:Name="Part_BinaryEditorPath" Width="250" Margin="5"
                          Text="{Binding BinaryEditorPath}"
                          />
                     <Button x:Name="Parts_SelectBinaryEditorPath" Width="30"  Content="..."
                             Click="Parts_SelectBinaryEditorPath_Click"
+                            Margin="2"
                             />
                 </StackPanel>
-                <Label Grid.Row="2" Grid.Column="0" Content="Image viewer"/>
+                <Label Grid.Row="2" Grid.Column="0" Content="{x:Static properties:Resources.ImageViewer}"/>
                 <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
-                    <TextBox x:Name="Part_ImageViewerPath" Width="200" Margin="5"
+                    <TextBox x:Name="Part_ImageViewerPath" Width="250" Margin="5"
                          Text="{Binding ImageViewerPath}"
                          />
                     <Button x:Name="Parts_SelectImageViewerPath" Width="30"  Content="..."
                             Click="Parts_SelectImageViewerPath_Click"
+                            Margin="2"
                             />
                 </StackPanel>
 

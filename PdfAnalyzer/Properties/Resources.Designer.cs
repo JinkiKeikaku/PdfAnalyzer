@@ -68,5 +68,77 @@ namespace PdfAnalyzer.Properties {
                 return ResourceManager.GetString("AppName", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Binary editor に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string BinaryEditor {
+            get {
+                return ResourceManager.GetString("BinaryEditor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Exit に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Exit {
+            get {
+                return ResourceManager.GetString("Exit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   File に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string File {
+            get {
+                return ResourceManager.GetString("File", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Image viewer に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ImageViewer {
+            get {
+                return ResourceManager.GetString("ImageViewer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Open に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Open {
+            get {
+                return ResourceManager.GetString("Open", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Settings に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Settings {
+            get {
+                return ResourceManager.GetString("Settings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Shortcut に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Shortcut {
+            get {
+                return ResourceManager.GetString("Shortcut", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Text editor に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string TextEditor {
+            get {
+                return ResourceManager.GetString("TextEditor", resourceCulture);
+            }
+        }
     }
 }

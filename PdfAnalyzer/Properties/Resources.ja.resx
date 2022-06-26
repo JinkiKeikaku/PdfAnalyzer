@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -117,31 +117,28 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AppName" xml:space="preserve">
-    <value>PDF Analyzer</value>
-  </data>
   <data name="File" xml:space="preserve">
-    <value>File</value>
+    <value>ファイル</value>
   </data>
   <data name="Open" xml:space="preserve">
-    <value>Open</value>
+    <value>開く</value>
   </data>
   <data name="Settings" xml:space="preserve">
-    <value>Settings</value>
+    <value>設定</value>
   </data>
   <data name="Shortcut" xml:space="preserve">
-    <value>Shortcut</value>
+    <value>ショートカット</value>
   </data>
   <data name="Exit" xml:space="preserve">
-    <value>Exit</value>
+    <value>終了</value>
   </data>
   <data name="TextEditor" xml:space="preserve">
-    <value>Text editor</value>
+    <value>テキストエディタ</value>
   </data>
   <data name="BinaryEditor" xml:space="preserve">
-    <value>Binary editor</value>
+    <value>バイナリエディタ</value>
   </data>
   <data name="ImageViewer" xml:space="preserve">
-    <value>Image viewer</value>
+    <value>画像ビューア</value>
   </data>
 </root>

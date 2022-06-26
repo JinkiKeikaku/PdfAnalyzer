@@ -5,6 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:PdfAnalyzer"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:properties="clr-namespace:PdfAnalyzer.Properties"
     xmlns:tree="clr-namespace:Aga.Controls.Tree;assembly=Aga.Controls"
     Title="PdfAnalyzer"
     Width="1000"
@@ -29,27 +30,29 @@
                     <Setter Property="VerticalContentAlignment" Value="Center" />
                 </Style>
             </Menu.ItemContainerStyle>
-            <MenuItem Header="File">
+            <MenuItem Header="{x:Static properties:Resources.File}">
                 <MenuItem
                     x:Name="Menu_Open"
                     Click="Menu_Open_Click"
-                    Header="Open" />
+                    Header="{x:Static properties:Resources.Open}" />
                 <Separator />
                 <MenuItem
                     x:Name="Menu_Settings"
                     Click="Menu_Settings_Click"
-                    Header="Settings" />
+                    Header="{x:Static properties:Resources.Settings}" />
                 <Separator />
                 <MenuItem
                     x:Name="Menu_Exit"
                     Click="Menu_Exit_Click"
-                    Header="Exit" />
+                    Header="{x:Static properties:Resources.Exit}" />
             </MenuItem>
         </Menu>
 
-        <tree:TreeList x:Name="Part_Tree" Grid.Row="1"
-                       MouseRightButtonUp="Part_Tree_MouseRightButtonUp"
-                       MouseDoubleClick="Part_Tree_MouseDoubleClick">
+        <tree:TreeList
+            x:Name="Part_Tree"
+            Grid.Row="1"
+            MouseDoubleClick="Part_Tree_MouseDoubleClick"
+            MouseRightButtonUp="Part_Tree_MouseRightButtonUp">
             <tree:TreeList.View>
                 <GridView>
                     <GridView.Columns>
@@ -72,32 +75,9 @@
                             Width="200"
                             DisplayMemberBinding="{Binding Information}"
                             Header="Information" />
-
                     </GridView.Columns>
                 </GridView>
             </tree:TreeList.View>
-
-
-
         </tree:TreeList>
-
-
-        <!--<TreeView
-            x:Name="Part_Tree"
-            Grid.Row="1"
-            VirtualizingPanel.IsVirtualizing="True"
-            ItemsSource="{Binding Datas}"
-            MouseRightButtonUp="Part_Tree_MouseRightButtonUp"
-            MouseDoubleClick="Part_Tree_MouseDoubleClick"
-            >
-
-            <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate
-                    ItemsSource="{Binding Children}" >
-                    <TextBlock Text="{Binding }"/>
-                </HierarchicalDataTemplate>
-            </TreeView.ItemTemplate>
-
-        </TreeView>-->
     </Grid>
 </Window>
