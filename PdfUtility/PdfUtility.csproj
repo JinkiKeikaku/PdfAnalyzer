@@ -9,11 +9,17 @@
     <Authors>Junkbulk</Authors>
     <Company>Jinki-Keikaku</Company>
     <Copyright>Copyright © 2022 JinkiKeikaku</Copyright>
+    <Platforms>AnyCPU;x86</Platforms>
 
   </PropertyGroup>
 
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
     <DebugType>none</DebugType>
   </PropertyGroup>
 

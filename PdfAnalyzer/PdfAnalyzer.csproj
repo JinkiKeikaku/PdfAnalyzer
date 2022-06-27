@@ -3,17 +3,21 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 
-    <Version>0.2.1</Version>
+    <Version>1.0.0</Version>
     <Authors>Junkbulk</Authors>
     <Company>Jinki-Keikaku</Company>
     <Copyright>Copyright © 2022 JinkiKeikaku</Copyright>
     <PackageIcon>PdfAnalyzerIcon.png</PackageIcon>
     <ApplicationIcon>Icon\PdfAnalyzerIcon.ico</ApplicationIcon>
+    <Platforms>AnyCPU</Platforms>
+    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+    <PlatformTarget>x86</PlatformTarget>
 
   </PropertyGroup>
 
@@ -22,12 +26,16 @@
     <DebugType>none</DebugType>
   </PropertyGroup>
 
-
   <ItemGroup>
     <Compile Remove="Theme\**" />
     <EmbeddedResource Remove="Theme\**" />
     <None Remove="Theme\**" />
     <Page Remove="Theme\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\OpenFile_16x.png" />
+    <None Remove="Resources\settingsoutline_16x.png" />
   </ItemGroup>
 
 
@@ -53,6 +61,8 @@
   <ItemGroup>
     <Resource Include="Icon\PdfAnalyzerIcon.ico" />
     <Resource Include="Icon\PdfAnalyzerIcon.png" />
+    <Resource Include="Resources\OpenFile_16x.png" />
+    <Resource Include="Resources\settingsoutline_16x.png" />
   </ItemGroup>
 
   <ItemGroup>

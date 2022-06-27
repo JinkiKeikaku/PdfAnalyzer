@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -44,7 +45,8 @@ namespace PdfAnalyzer
         private void Parts_SelectTextEditorPath_Click(object sender, RoutedEventArgs e)
         {
             var s = TextEditorPath;
-            SelectPath(TextEditorPath, s => { 
+            SelectPath(TextEditorPath, s =>
+            {
                 TextEditorPath = s;
                 OnPropertyChanged(nameof(TextEditorPath));
             });
@@ -53,7 +55,8 @@ namespace PdfAnalyzer
         private void Parts_SelectBinaryEditorPath_Click(object sender, RoutedEventArgs e)
         {
             var s = BinaryEditorPath;
-            SelectPath(TextEditorPath, s => {
+            SelectPath(TextEditorPath, s =>
+            {
                 BinaryEditorPath = s;
                 OnPropertyChanged(nameof(BinaryEditorPath));
             });
@@ -61,7 +64,8 @@ namespace PdfAnalyzer
         private void Parts_SelectImageViewerPath_Click(object sender, RoutedEventArgs e)
         {
             var s = ImageViewerPath;
-            SelectPath(ImageViewerPath, s => {
+            SelectPath(ImageViewerPath, s =>
+            {
                 ImageViewerPath = s;
                 OnPropertyChanged(nameof(ImageViewerPath));
             });
@@ -76,10 +80,7 @@ namespace PdfAnalyzer
                 Filter = "Exe file(.exe)|*.exe|All files (*.*)|*.*",
             };
 
-            if (f.ShowDialog(Application.Current.MainWindow) == true)
-            {
-                action(f.FileName);
-            }
+            if (f.ShowDialog(Application.Current.MainWindow) == true) action(f.FileName);
         }
 
 
@@ -88,5 +89,14 @@ namespace PdfAnalyzer
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+        {
+            Process.Start(
+                new ProcessStartInfo("cmd", $"/c start {e.Uri.ToString()}")
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                });
+        }
     }
 }

@@ -115,11 +115,31 @@ namespace PdfAnalyzer.Properties {
         }
         
         /// <summary>
+        ///   型 System.Drawing.Bitmap のローカライズされたリソースを検索します。
+        /// </summary>
+        public static System.Drawing.Bitmap OpenFile_16x {
+            get {
+                object obj = ResourceManager.GetObject("OpenFile_16x", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
         ///   Settings に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Settings {
             get {
                 return ResourceManager.GetString("Settings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   型 System.Drawing.Bitmap のローカライズされたリソースを検索します。
+        /// </summary>
+        public static System.Drawing.Bitmap SettingsOutline_16x {
+            get {
+                object obj = ResourceManager.GetObject("SettingsOutline_16x", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
             }
         }
         
@@ -138,6 +158,24 @@ namespace PdfAnalyzer.Properties {
         public static string TextEditor {
             get {
                 return ResourceManager.GetString("TextEditor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   File open に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ToolTip_FileOpen {
+            get {
+                return ResourceManager.GetString("ToolTip_FileOpen", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Settings に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ToolTip_Settings {
+            get {
+                return ResourceManager.GetString("ToolTip_Settings", resourceCulture);
             }
         }
     }

@@ -126,9 +126,6 @@
   <data name="Settings" xml:space="preserve">
     <value>設定</value>
   </data>
-  <data name="Shortcut" xml:space="preserve">
-    <value>ショートカット</value>
-  </data>
   <data name="Exit" xml:space="preserve">
     <value>終了</value>
   </data>
@@ -140,5 +137,11 @@
   </data>
   <data name="ImageViewer" xml:space="preserve">
     <value>画像ビューア</value>
+  </data>
+  <data name="ToolTip_FileOpen" xml:space="preserve">
+    <value>ファイルを開く</value>
+  </data>
+  <data name="ToolTip_Settings" xml:space="preserve">
+    <value>設定</value>
   </data>
 </root>

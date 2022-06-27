@@ -59,6 +59,15 @@
                             />
                 </StackPanel>
 
+                <TextBlock Margin ="8"  Grid.Row="3" Grid.Column="1" HorizontalAlignment="Right">
+                <Hyperlink
+                    Cursor="Hand"
+                    NavigateUri="https://junkbulk.com/windows/PdfAnalyzer/index.html"
+                    RequestNavigate="Hyperlink_RequestNavigate">
+                    PdfAnalyzer
+                </Hyperlink>
+                </TextBlock>
+
             </Grid>
             <StackPanel Grid.Row="3" Orientation="Vertical">
                 <StackPanel

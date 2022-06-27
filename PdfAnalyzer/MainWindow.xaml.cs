@@ -72,7 +72,7 @@ namespace PdfAnalyzer
                 }
 
                 //Shortcut
-                var shortcutItem = new PdfShortcutItem("Shortcut");
+                var shortcutItem = new PdfShortcutItem(Properties.Resources.Shortcut);
                 var pdfRoot = doc.Root;
                 if (pdfRoot == null) throw new Exception("Cannot get root dictionary.");
                 var pdfRootItem = PdfAnalyzeHelper.CreateItem(pdfRoot, "/Root");

@@ -20,10 +20,11 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Menu Grid.Row="0">
+        <!--<Menu Grid.Row="0">
             <Menu.ItemContainerStyle>
                 <Style TargetType="MenuItem">
                     <Setter Property="HorizontalContentAlignment" Value="Left" />
@@ -46,11 +47,29 @@
                     Click="Menu_Exit_Click"
                     Header="{x:Static properties:Resources.Exit}" />
             </MenuItem>
-        </Menu>
-
+        </Menu>-->
+            <ToolBarTray
+            x:Name="Part_MainTooBarTray"
+            Grid.Row="1"
+            VerticalAlignment="Top">
+            <ToolBar x:Name="ToolBar_File" OverflowMode="AsNeeded">
+                <Button
+                    VerticalAlignment="Stretch"
+                    Click="Menu_Open_Click"
+                    ToolTip="{x:Static properties:Resources.ToolTip_FileOpen}">
+                    <Image Source="./Resources/OpenFile_16x.png" />
+                </Button>
+                <Button
+                    VerticalAlignment="Stretch"
+                    Click="Menu_Settings_Click"
+                    ToolTip="{x:Static properties:Resources.ToolTip_Settings}">
+                    <Image Source="./Resources/SettingsOutline_16x.png" />
+                </Button>
+            </ToolBar>
+        </ToolBarTray>
         <tree:TreeList
             x:Name="Part_Tree"
-            Grid.Row="1"
+            Grid.Row="2"
             MouseDoubleClick="Part_Tree_MouseDoubleClick"
             MouseRightButtonUp="Part_Tree_MouseRightButtonUp">
             <tree:TreeList.View>
